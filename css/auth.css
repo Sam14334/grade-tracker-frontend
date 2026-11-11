@@ -1,0 +1,27 @@
+.bg-mesh {
+  background-color: #3d010e;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(128, 0, 32, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(107, 8, 32, 0.9) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(61, 1, 14, 0.95) 0px, transparent 100%);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+}
+
+.fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
