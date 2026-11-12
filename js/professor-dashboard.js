@@ -6,6 +6,9 @@ let standingCourses = [];
 let activeStandingFilter = 'all';
 let refreshingStandings = false;
 let editingTemplateId = 0;
+let standingDialogPreviousOverflow = null;
+let initialTemplate = null;
+let initialLockedComponents = {};
 
 document.addEventListener("DOMContentLoaded", bootstrapProfessorDashboard);
 
@@ -60,9 +63,12 @@ async function bootstrapProfessorDashboard() {
 }
 
 function initProfessorDashboard(editData) {
+    initialTemplate = editData?.template ?? null;
+    initialLockedComponents = editData?.lockedComponents ?? {};
     renderTemplateForm(editData?.template ?? null, editData?.lockedComponents ?? {});
     renderTemplatesList();
     initializeClassStanding();
+    initializeStandingDialogScrollLock();
     showProfessorFlash();
 
     document.getElementById('logoutBtn').addEventListener('click', logoutProfessor);
@@ -70,6 +76,29 @@ function initProfessorDashboard(editData) {
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) refreshStandings();
     });
+}
+
+function initializeStandingDialogScrollLock() {
+    const dialog = document.getElementById('standingDialog');
+    dialog.addEventListener('close', () => setStandingDialogScrollLock(false));
+}
+
+function setStandingDialogScrollLock(locked) {
+    if (locked) {
+        if (standingDialogPreviousOverflow !== null) return;
+        standingDialogPreviousOverflow = {
+            html: document.documentElement.style.overflow,
+            body: document.body.style.overflow
+        };
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+        return;
+    }
+
+    if (standingDialogPreviousOverflow === null) return;
+    document.documentElement.style.overflow = standingDialogPreviousOverflow.html;
+    document.body.style.overflow = standingDialogPreviousOverflow.body;
+    standingDialogPreviousOverflow = null;
 }
 
 function showProfessorAlert(message, type = 'error') {
@@ -91,17 +120,17 @@ function showProfessorFlash() {
 
     if (params.get('error')) {
         showProfessorAlert(params.get('error'), 'error');
-        tabHint = 'templates';
     } else if (params.get('template') === 'success') {
         const code = params.get('code') ? ` Class Sync Code: ${params.get('code')}` : '';
         showProfessorAlert(`Syllabus template published and saved to database!${code} Share this code with your students.`, 'success');
-        tabHint = 'templates';
     } else if (params.get('template') === 'updated') {
         showProfessorAlert('Template updated. Enrolled students will see the changes when they reload their dashboard.', 'success');
-        tabHint = 'templates';
-    } else if (params.get('edit')) {
-        tabHint = 'templates';
-    } else if (window.location.hash === '#templates') {
+    }
+
+    const hashTab = window.location.hash.slice(1);
+    if (hashTab === 'standing' || hashTab === 'templates') {
+        tabHint = hashTab;
+    } else if (params.has('error') || params.has('template') || params.has('edit')) {
         tabHint = 'templates';
     }
 
@@ -116,15 +145,18 @@ function switchProfessorTab(tab) {
     const showStanding = tab === 'standing';
     document.getElementById('standingSection').classList.toggle('hidden', !showStanding);
     document.getElementById('templatesSection').classList.toggle('hidden', showStanding);
+    window.history.replaceState({}, document.title, `${window.location.pathname}#${tab}`);
     ['standing', 'templates'].forEach(name => {
         document.getElementById(`mobile-${name}`).className = `flex-1 rounded-xl px-3 py-2 text-xs font-bold ${name === tab ? 'bg-maroon-900 text-white' : 'bg-stone-200 text-stone-700'}`;
     });
-    document.getElementById('nav-standing').className = showStanding
-        ? 'w-full text-left px-4 py-3 rounded-xl font-bold text-xs flex items-center space-x-3 bg-maroon-100 text-maroon-900 border border-maroon-200'
-        : 'w-full text-left px-4 py-3 rounded-xl font-medium text-xs text-stone-700 hover:bg-stone-200/60 transition flex items-center space-x-3';
-    document.getElementById('nav-templates').className = showStanding
-        ? 'w-full text-left px-4 py-3 rounded-xl font-medium text-xs text-stone-700 hover:bg-stone-200/60 transition flex items-center space-x-3'
-        : 'w-full text-left px-4 py-3 rounded-xl font-bold text-xs flex items-center space-x-3 bg-maroon-100 text-maroon-900 border border-maroon-200';
+    const standingNav = document.getElementById('nav-standing');
+    const templatesNav = document.getElementById('nav-templates');
+    standingNav.className = showStanding
+        ? 'w-full text-left px-3 py-2.5 rounded-lg font-bold text-[11px] flex items-center space-x-3 bg-[#eee8dc] text-maroon-900 border border-[#e5ddcf]'
+        : 'w-full text-left px-3 py-2.5 rounded-lg font-medium text-[11px] text-stone-600 hover:bg-stone-200/60 transition flex items-center space-x-3';
+    templatesNav.className = showStanding
+        ? 'w-full text-left px-3 py-2.5 rounded-lg font-medium text-[11px] text-stone-600 hover:bg-stone-200/60 transition flex items-center space-x-3'
+        : 'w-full text-left px-3 py-2.5 rounded-lg font-bold text-[11px] flex items-center space-x-3 bg-[#eee8dc] text-maroon-900 border border-[#e5ddcf]';
     if (showStanding) refreshStandings();
 }
 
@@ -132,13 +164,16 @@ function renderTemplateForm(template, lockedComponents) {
     editingTemplateId = template ? Number(template.id) : 0;
 
     document.getElementById('templateIdInput').value = String(editingTemplateId);
-    document.getElementById('templateEditorTitle').textContent = template ? 'Edit Course Template' : 'Create Course Template';
+    document.getElementById('templateEditorTitle').textContent = template
+        ? `Editing ${template.code} · ${template.title}`
+        : 'Create a new course template';
     document.getElementById('courseCodeInput').value = template ? template.code : '';
     document.getElementById('courseTitleInput').value = template ? template.title : '';
     document.getElementById('courseUnitInput').value = template ? Number(template.units).toFixed(1) : '';
 
-    const publishButton = document.querySelector('button[name="btnPublishTemplate"]');
-    publishButton.textContent = template ? 'Save Changes' : 'Publish Syllabus & Generate Class Code';
+    document.getElementById('publishTemplateButtonText').textContent = template
+        ? 'Save Changes'
+        : 'Save & Generate Code';
 
     const note = document.getElementById('editingTemplateNote');
     const cancelLink = document.getElementById('cancelEditingLink');
@@ -173,6 +208,13 @@ function renderTemplateForm(template, lockedComponents) {
     });
 
     calculateTotalWeight();
+    const activeTemplate = template || enrolledTemplates[0] || null;
+    renderActiveClassCode(activeTemplate);
+}
+
+function resetTemplateForm() {
+    const templateToRestore = editingTemplateId > 0 ? initialTemplate : null;
+    renderTemplateForm(templateToRestore, templateToRestore ? initialLockedComponents : {});
 }
 
 function appendComponentRow(period, component = null, locked = false) {
@@ -224,14 +266,28 @@ function removeRow(button) {
 
 function calculateTotalWeight() {
     let valid = true;
+    const totals = {};
     Object.keys(periodLabels).forEach(period => {
         const inputs = document.querySelectorAll(`#componentContainer-${period} .comp-weight`);
         const total = [...inputs].reduce((sum, input) => sum + (Number(input.value) || 0), 0);
         const badge = document.getElementById(`weightTotalBadge-${period}`);
-        badge.textContent = `Total Weight: ${total}%`;
-        badge.className = `text-xs font-bold ${total === 100 ? 'text-emerald-700' : 'text-rose-700'}`;
-        if (total !== 100) valid = false;
+        const periodValid = total === 100;
+        totals[period] = total;
+        badge.textContent = `${total}% / 100%`;
+        badge.className = `rounded-full px-2 py-1 text-[8px] font-bold ${periodValid ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`;
+        badge.setAttribute('aria-label', `${periodLabels[period]} weights total ${total} percent${periodValid ? ', valid' : ', must total 100 percent'}`);
+        if (!periodValid) valid = false;
     });
+
+    const progress = document.getElementById('overallWeightProgress');
+    const status = document.getElementById('overallWeightStatus');
+    const completePeriods = Object.values(totals).filter(total => total === 100).length;
+    const progressPercent = (Math.min(100, totals.midterms) + Math.min(100, totals.finals)) / 2;
+    progress.style.width = `${progressPercent}%`;
+    status.textContent = valid
+        ? '100% / 100% (Valid)'
+        : `${completePeriods} / 2 periods complete`;
+    status.className = `font-bold ${valid ? 'text-emerald-700' : 'text-rose-700'}`;
     return valid;
 }
 
@@ -251,7 +307,7 @@ function validatePublishForm(event) {
 
     const button = document.querySelector('button[name="btnPublishTemplate"]');
     button.disabled = true;
-    button.textContent = editingTemplateId !== 0 ? 'Saving...' : 'Publishing...';
+    document.getElementById('publishTemplateButtonText').textContent = editingTemplateId !== 0 ? 'Saving...' : 'Publishing...';
     submitTemplateForm(button);
     return false;
 }
@@ -282,64 +338,159 @@ async function submitTemplateForm(button) {
         const data = editingTemplateId > 0
             ? await API.put(`/templates/${editingTemplateId}`, payload)
             : await API.post('/templates', payload);
+        const savedTemplateId = editingTemplateId || Number(data.templateId);
+        const wasEditing = editingTemplateId > 0;
 
-        if (editingTemplateId > 0) {
-            window.location.href = 'professor_dashboard.html?template=updated#templates';
-        } else {
-            window.location.href = 'professor_dashboard.html?template=success&code=' +
-                encodeURIComponent(data.classCode || '') + '#templates';
+        if (!Number.isInteger(savedTemplateId) || savedTemplateId <= 0) {
+            throw new Error('The template was saved, but its identifier was missing from the response.');
+        }
+
+        button.disabled = false;
+        try {
+            const [templatesData, standingsData, detailData] = await Promise.all([
+                API.get('/templates'),
+                API.get('/professor/standings'),
+                API.get(`/templates/${savedTemplateId}`)
+            ]);
+            if (!Array.isArray(templatesData.templates) || !Array.isArray(standingsData.courses) || !detailData.template) {
+                throw new Error('The saved template refresh returned an invalid response.');
+            }
+
+            enrolledTemplates = templatesData.templates;
+            standingCourses = standingsData.courses;
+            const savedTemplate = enrolledTemplates.find(template => Number(template.id) === savedTemplateId);
+            if (!savedTemplate) throw new Error('The saved template could not be found in the refreshed template list.');
+
+            if (wasEditing) {
+                initialTemplate = detailData.template;
+                initialLockedComponents = detailData.lockedComponents || {};
+                renderTemplateForm(detailData.template, initialLockedComponents);
+            } else {
+                initialTemplate = null;
+                initialLockedComponents = {};
+                renderTemplateForm(null, {});
+            }
+            renderTemplatesList();
+            renderActiveClassCode(savedTemplate);
+            renderClassStanding();
+
+            const generatedCode = savedTemplate.classCode || data.classCode;
+            window.history.replaceState({}, document.title, `${window.location.pathname}#templates`);
+            showProfessorAlert(
+                wasEditing
+                    ? `${savedTemplate.code} was updated successfully. Students will see the changes when they reload their dashboard.`
+                    : `Template published successfully. Class Sync Code: ${generatedCode}. Share this code with your students.`,
+                'success'
+            );
+        } catch (refreshError) {
+            showProfessorAlert(
+                `Template saved successfully, but the dashboard could not refresh its latest data: ${refreshError.message}`,
+                'error'
+            );
+            document.getElementById('publishTemplateButtonText').textContent =
+                wasEditing ? 'Save Changes' : 'Save & Generate Code';
         }
     } catch (error) {
         showProfessorAlert(error.message, 'error');
         button.disabled = false;
-        button.textContent = editingTemplateId > 0 ? 'Save Changes' : 'Publish Syllabus & Generate Class Code';
+        document.getElementById('publishTemplateButtonText').textContent = editingTemplateId > 0 ? 'Save Changes' : 'Save & Generate Code';
     }
 }
 
 function renderTemplatesList() {
     const container = document.getElementById('publishedTemplatesList');
     container.innerHTML = '';
+    document.getElementById('templateCountBadge').textContent =
+        `${enrolledTemplates.length} ${enrolledTemplates.length === 1 ? 'template' : 'templates'}`;
 
     if (enrolledTemplates.length === 0) {
-        container.innerHTML = '<p class="text-xs text-stone-400 italic">No published class templates found.</p>';
+        container.innerHTML = '<p class="rounded-lg border border-dashed border-stone-300 bg-white p-3 text-[8px] italic text-stone-400">No published course templates yet.</p>';
+        renderActiveClassCode(null);
         return;
     }
 
     enrolledTemplates.forEach(tpl => {
         const card = document.createElement('div');
-        card.className = "bg-white p-5 rounded-3xl border border-stone-200 shadow-sm space-y-3";
-
-        const componentsHtml = Object.entries(periodLabels).map(([period, label]) => `
-            <div class="pt-2"><p class="font-bold text-maroon-900 mb-1">${label} · 100%</p>
-            ${tpl.components.filter(c => c.period === period).map(c => `
-                <div class="flex justify-between text-stone-600"><span>${escapeHtml(c.name)}${c.is_exam ? ' · Exam' : ''}</span><span class="font-bold">${c.weight}%</span></div>`).join('')}</div>`).join('');
+        const enrollmentCount = standingCourses.find(course => String(course.id) === String(tpl.id))?.students.length ?? 0;
+        card.className = 'rounded-lg border border-stone-200 bg-white p-3 shadow-sm';
 
         card.innerHTML = `
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <span class="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">PUBLISHED SYLLABUS</span>
-                    <h4 class="font-extrabold text-slate-900 text-base mt-1">${escapeHtml(tpl.code)}</h4>
-                    <p class="text-xs text-stone-500 font-medium">${escapeHtml(tpl.title)}</p>
-                    <p class="text-xs text-stone-500 font-medium">${Number(tpl.units).toFixed(1)} units</p>
+            <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                    <p class="truncate text-[9px] font-extrabold text-slate-800">${escapeHtml(tpl.code)} · ${escapeHtml(tpl.title)}</p>
+                    <p class="mt-1 text-[8px] text-stone-500">${Number(tpl.units).toFixed(1)} units · ${enrollmentCount} enrolled</p>
                 </div>
-                <div class="text-right flex flex-wrap items-center gap-2">
-                    <div>
-                        <span class="text-[10px] uppercase font-bold text-stone-400 block">Class Sync Code</span>
-                        <span class="font-mono font-black text-maroon-900 text-sm bg-stone-100 px-2.5 py-1 rounded-lg border border-stone-200 inline-block mt-0.5">${escapeHtml(tpl.classCode)}</span>
-                    </div>
-                    <a href="professor_dashboard.html?edit=${tpl.id}#templates" class="inline-flex items-center gap-1 rounded-lg bg-maroon-50 px-2.5 py-1.5 text-xs font-bold text-maroon-900 hover:bg-maroon-100"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
-                    <button type="button" onclick="removeTemplate(${tpl.id})" aria-label="Delete template" class="text-stone-400 hover:text-rose-600 transition text-sm">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
+                <div class="flex shrink-0 items-center gap-1">
+                    <button type="button" onclick="selectTemplateCode(${Number(tpl.id)})" class="rounded-md border border-stone-200 px-2 py-1 text-[7px] font-bold text-stone-600 hover:bg-stone-50">View Code</button>
+                    <a href="professor_dashboard.html?edit=${Number(tpl.id)}#templates" class="rounded-md bg-maroon-50 px-2 py-1 text-[7px] font-bold text-maroon-900 hover:bg-maroon-100">Edit</a>
+                    <button type="button" onclick="removeTemplate(${Number(tpl.id)})" aria-label="Delete ${escapeHtml(tpl.code)} template" class="flex h-6 w-6 items-center justify-center rounded-md text-stone-400 hover:bg-rose-50 hover:text-rose-600"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             </div>
-
-            <div class="bg-stone-50 p-3 rounded-2xl border border-stone-200 text-xs space-y-1.5">
-                ${componentsHtml}
+            <div class="mt-2 flex items-center justify-between border-t border-stone-100 pt-2">
+                <span class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Class code</span>
+                <span class="font-mono text-[8px] font-extrabold tracking-wider text-maroon-900">${escapeHtml(tpl.classCode)}</span>
             </div>
         `;
         container.appendChild(card);
     });
+
+    const activeTemplate = enrolledTemplates.find(template => Number(template.id) === editingTemplateId) || enrolledTemplates[0];
+    renderActiveClassCode(activeTemplate);
+}
+
+function renderActiveClassCode(template) {
+    const courseLabel = document.getElementById('classCodeCourseLabel');
+    const codeDisplay = document.getElementById('classCodeDisplay');
+    const copyButton = document.getElementById('copyClassCodeButton');
+    const enrollmentCount = document.getElementById('classCodeEnrollmentCount');
+    const syncStatus = document.getElementById('classCodeSyncStatus');
+    document.getElementById('classCodeCopyStatus').textContent = '';
+
+    if (!template) {
+        courseLabel.textContent = 'New class template';
+        codeDisplay.textContent = '—';
+        codeDisplay.dataset.code = '';
+        copyButton.disabled = true;
+        enrollmentCount.textContent = '—';
+        syncStatus.textContent = 'Not published';
+        syncStatus.className = 'rounded-full bg-stone-100 px-2 py-1 font-bold text-stone-500';
+        return;
+    }
+
+    const course = standingCourses.find(item => String(item.id) === String(template.id));
+    courseLabel.textContent = `${template.code} Class Code`;
+    codeDisplay.textContent = template.classCode || '—';
+    codeDisplay.dataset.code = template.classCode || '';
+    copyButton.disabled = !template.classCode;
+    enrollmentCount.textContent = String(course?.students.length ?? 0);
+    syncStatus.textContent = template.classCode ? 'Published' : 'Not published';
+    syncStatus.className = template.classCode
+        ? 'rounded-full bg-emerald-50 px-2 py-1 font-bold text-emerald-700'
+        : 'rounded-full bg-stone-100 px-2 py-1 font-bold text-stone-500';
+}
+
+function selectTemplateCode(templateId) {
+    const template = enrolledTemplates.find(item => Number(item.id) === templateId);
+    if (template) renderActiveClassCode(template);
+}
+
+async function copyActiveClassCode() {
+    const code = document.getElementById('classCodeDisplay').dataset.code;
+    const status = document.getElementById('classCodeCopyStatus');
+    if (!code) {
+        status.textContent = 'No class code is available yet.';
+        return;
+    }
+    if (!navigator.clipboard?.writeText) {
+        status.textContent = 'Clipboard access is unavailable in this browser.';
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(code);
+        status.textContent = 'Class code copied.';
+    } catch (error) {
+        status.textContent = 'Could not copy the class code. Please copy it manually.';
+    }
 }
 
 async function removeTemplate(id) {
@@ -364,13 +515,12 @@ function initializeClassStanding() {
             activeStandingFilter = button.dataset.standingFilter;
             document.querySelectorAll('.standing-filter').forEach(filterButton => {
                 filterButton.className = filterButton === button
-                    ? 'standing-filter px-3 py-2 rounded-full bg-maroon-900 text-white text-[11px] font-bold'
-                    : 'standing-filter px-3 py-2 rounded-full bg-stone-100 text-stone-700 text-[11px] font-bold';
+                    ? 'standing-filter px-3 py-1.5 rounded-full bg-maroon-900 text-white text-[9px] font-bold'
+                    : 'standing-filter px-3 py-1.5 rounded-full bg-stone-100 text-stone-700 text-[9px] font-bold';
             });
             renderClassStanding();
         });
     });
-    renderCourseSummaries();
     renderClassStanding();
     document.getElementById('standingRefreshStatus').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
 }
@@ -378,7 +528,7 @@ function initializeClassStanding() {
 function updateCourseOptions() {
     const courseFilter = document.getElementById('courseFilter');
     const selected = courseFilter.value;
-    courseFilter.innerHTML = '<option value="all">All Courses (Ranked Within Each Course)</option>';
+    courseFilter.innerHTML = '<option value="all">All Enrolled Sections (Overall Standing)</option>';
     standingCourses.forEach(course => {
         const option = document.createElement('option');
         option.value = String(course.id);
@@ -399,7 +549,6 @@ async function refreshStandings() {
 
         standingCourses = data.courses;
         updateCourseOptions();
-        renderCourseSummaries();
         renderClassStanding();
 
         const dialog = document.getElementById('standingDialog');
@@ -451,29 +600,6 @@ function standingStatus(row) {
     return { label: 'Good Standing', style: 'bg-blue-100 text-blue-700' };
 }
 
-function renderCourseSummaries() {
-    const container = document.getElementById('courseSummaryList');
-    if (standingCourses.length === 0) {
-        container.innerHTML = '<p class="text-xs text-stone-500 italic">No course templates yet. Create a template to start collecting class standings.</p>';
-        return;
-    }
-    container.innerHTML = standingCourses.map(course => {
-        const graded = course.students.filter(student => student.percentage !== null);
-        const average = graded.length
-            ? graded.reduce((total, student) => total + student.percentage, 0) / graded.length
-            : null;
-        const riskCount = graded.filter(student => student.percentage < 75).length;
-        return `<article class="rounded-xl border border-stone-200 bg-stone-50 p-4">
-            <div class="flex items-start justify-between gap-3">
-                <div><p class="font-extrabold text-slate-800">${escapeHtml(course.code)}</p><p class="text-xs text-stone-500 mt-0.5">${escapeHtml(course.title)}</p></div>
-                <span class="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-stone-600 border border-stone-200">${course.students.length} enrolled</span>
-            </div>
-            <div class="mt-3 flex items-center justify-between text-xs"><span class="text-stone-500">Average current standing</span><strong class="text-slate-800">${formatPercentage(average)}</strong></div>
-            <div class="mt-1 flex items-center justify-between text-xs"><span class="text-stone-500">At risk</span><strong class="${riskCount ? 'text-rose-700' : 'text-emerald-700'}">${riskCount} students</strong></div>
-        </article>`;
-    }).join('');
-}
-
 function renderClassStanding() {
     const courses = selectedCourses();
     const rows = getVisibleStandings();
@@ -497,7 +623,70 @@ function renderClassStanding() {
         ? `${courses[0].code} · ${courses[0].title}`
         : 'Across all your active classes';
 
+    renderDistribution(gradedRows, average);
     renderStandingTable(courses, rows, allRows);
+}
+
+function renderDistribution(rows, average) {
+    const chart = document.getElementById('distributionChart');
+    const summary = document.getElementById('distributionSummary');
+    const bins = [
+        { min: 0, max: 65, label: '<65%' },
+        { min: 65, max: 70, label: '65–69%' },
+        { min: 70, max: 75, label: '70–74%' },
+        { min: 75, max: 80, label: '75–79%' },
+        { min: 80, max: 85, label: '80–84%' },
+        { min: 85, max: 90, label: '85–89%' },
+        { min: 90, max: 95, label: '90–94%' },
+        { min: 95, max: 101, label: '95–100%' }
+    ];
+    const counts = bins.map(bin => rows.filter(row => row.percentage >= bin.min && row.percentage < bin.max).length);
+    const width = 760;
+    const left = 28;
+    const right = 12;
+    const top = 26;
+    const baseline = 184;
+    const plotWidth = width - left - right;
+    const plotHeight = baseline - top;
+    const binWidth = plotWidth / bins.length;
+    const maxCount = Math.max(1, ...counts);
+    const averageX = average === null ? null : left + (Math.max(0, Math.min(100, average)) / 100) * plotWidth;
+    const variance = rows.length
+        ? rows.reduce((total, row) => total + Math.pow(row.percentage - average, 2), 0) / rows.length
+        : 0;
+    const deviation = Math.sqrt(variance) || 1;
+    const curvePoints = rows.length
+        ? Array.from({ length: 101 }, (_, index) => {
+            const grade = index;
+            const x = left + (grade / 100) * plotWidth;
+            const normalized = Math.exp(-0.5 * Math.pow((grade - average) / deviation, 2));
+            const y = baseline - normalized * plotHeight * 0.88;
+            return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(' ')
+        : '';
+    const bars = bins.map((bin, index) => {
+        const height = counts[index] ? counts[index] / maxCount * plotHeight * 0.72 : 0;
+        const x = left + index * binWidth + binWidth * 0.1;
+        const y = baseline - height;
+        const fill = index < 3 ? '#f5e3e7' : index < 6 ? '#dff3e8' : '#fff0c7';
+        return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(binWidth * 0.8).toFixed(1)}" height="${height.toFixed(1)}" rx="4" fill="${fill}"/>
+            ${counts[index] ? `<text x="${(x + binWidth * 0.4).toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" fill="#78716c" font-size="9">${counts[index]}</text>` : ''}
+            <text x="${(left + index * binWidth + binWidth / 2).toFixed(1)}" y="205" text-anchor="middle" fill="#78716c" font-size="8">${bin.label}</text>`;
+    }).join('');
+    const gridLines = [0, Math.ceil(maxCount / 2), maxCount].filter((value, index, values) => values.indexOf(value) === index).map(value => {
+        const y = baseline - value / maxCount * plotHeight * 0.72;
+        return `<line x1="${left}" y1="${y.toFixed(1)}" x2="${width - right}" y2="${y.toFixed(1)}" stroke="#f1efeb" stroke-width="1"/>`;
+    }).join('');
+
+    chart.innerHTML = `${gridLines}${bars}
+        ${averageX === null ? '' : `<line x1="${averageX.toFixed(1)}" y1="${top}" x2="${averageX.toFixed(1)}" y2="${baseline}" stroke="#c58b32" stroke-width="1" stroke-dasharray="3 3"/>
+            <rect x="${Math.max(left, Math.min(width - 112, averageX - 40)).toFixed(1)}" y="3" width="80" height="17" rx="5" fill="#4a0415"/>
+            <text x="${Math.max(left + 40, Math.min(width - 72, averageX)).toFixed(1)}" y="14.5" text-anchor="middle" fill="white" font-size="9" font-weight="700">Mean ${formatPercentage(average)}</text>`}
+        ${curvePoints ? `<polyline points="${curvePoints}" fill="none" stroke="#6b0820" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+        <line x1="${left}" y1="${baseline}" x2="${width - right}" y2="${baseline}" stroke="#e7e5e4" stroke-width="1"/>`;
+    summary.textContent = rows.length
+        ? `Mean standing: ${formatPercentage(average)} · ${rows.length} evaluated ${rows.length === 1 ? 'student' : 'students'}`
+        : 'No evaluated standings available.';
 }
 
 function renderStandingTable(courses, rows, allRows) {
@@ -505,10 +694,10 @@ function renderStandingTable(courses, rows, allRows) {
     const tableBody = document.getElementById('standingTableBody');
     const showCourse = document.getElementById('courseFilter').value === 'all';
     const components = courses.length === 1 ? courses[0].components : [];
-    tableHead.innerHTML = `<tr class="bg-stone-50 text-[10px] uppercase tracking-wide text-stone-500 border-b border-stone-200">
-        <th class="p-3">Course Rank</th><th class="p-3">Student</th>${showCourse ? '<th class="p-3">Course</th>' : ''}
-        <th class="p-3">Current Standing</th>${components.map(component => `<th class="p-3">${periodLabels[component.period]} · ${escapeHtml(component.name)} (${component.weight}%)</th>`).join('')}
-        <th class="p-3">Coverage / Status</th><th class="p-3 text-right">Action</th></tr>`;
+    tableHead.innerHTML = `<tr class="bg-stone-50 text-[8px] uppercase tracking-wide text-stone-500 border-b border-stone-200">
+        <th class="p-2.5">Rank</th><th class="p-2.5">Student</th>${showCourse ? '<th class="p-2.5">Course</th>' : ''}
+        <th class="p-2.5">Overall Grade</th>${components.map(component => `<th class="p-2.5">${periodLabels[component.period]} · ${escapeHtml(component.name)} (${component.weight}%)</th>`).join('')}
+        <th class="p-2.5">Status / Coverage</th><th class="p-2.5 text-right">Action</th></tr>`;
     const sort = document.getElementById('rankSort').value;
     const rankByEnrollment = new Map();
     courses.forEach(course => {
@@ -532,18 +721,18 @@ function renderStandingTable(courses, rows, allRows) {
         const status = standingStatus(row);
         const componentCells = components.map(component => {
             const item = row.components.find(result => result.id === component.id);
-            return `<td class="p-3 text-stone-600">${formatPercentage(item?.percentage ?? null)}</td>`;
+            return `<td class="p-2.5 text-stone-600">${formatPercentage(item?.percentage ?? null)}</td>`;
         }).join('');
         const current = formatPercentage(row.percentage);
         const progressText = `${row.gradedWeight}% course weight covered`;
         return `<tr class="hover:bg-stone-50/80">
-            <td class="p-3 font-bold text-stone-500">${rankByEnrollment.has(row.enrollmentId) ? `#${rankByEnrollment.get(row.enrollmentId)}` : '—'}</td>
-            <td class="p-3"><p class="font-bold text-slate-800">${escapeHtml(row.student)}</p><p class="text-[10px] text-stone-400 mt-0.5">${escapeHtml(row.email)}</p></td>
-            ${showCourse ? `<td class="p-3 font-semibold text-stone-600">${escapeHtml(row.course.code)}</td>` : ''}
-            <td class="p-3"><span class="font-black text-slate-900">${current}</span>${row.percentage !== null ? `<div class="mt-1 h-1.5 w-20 rounded-full bg-stone-100"><div class="h-1.5 rounded-full ${row.percentage < 75 ? 'bg-rose-500' : 'bg-maroon-900'}" style="width:${Math.max(0, Math.min(100, row.percentage))}%"></div></div>` : ''}</td>
+            <td class="p-2.5 font-bold text-stone-500">${rankByEnrollment.has(row.enrollmentId) ? `#${rankByEnrollment.get(row.enrollmentId)}` : '—'}</td>
+            <td class="p-2.5"><p class="font-bold text-slate-800">${escapeHtml(row.student)}</p><p class="text-[8px] text-stone-400 mt-0.5">${escapeHtml(row.email)}</p></td>
+            ${showCourse ? `<td class="p-2.5 font-semibold text-stone-600">${escapeHtml(row.course.code)}</td>` : ''}
+            <td class="p-2.5"><span class="font-black text-slate-900">${current}</span>${row.percentage !== null ? `<div class="mt-1 h-1 w-20 rounded-full bg-stone-100"><div class="h-1 rounded-full ${row.percentage < 75 ? 'bg-rose-500' : 'bg-maroon-900'}" style="width:${Math.max(0, Math.min(100, row.percentage))}%"></div></div>` : ''}</td>
             ${componentCells}
-            <td class="p-3"><span class="inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${status.style}">${status.label}</span><p class="text-[10px] text-stone-400 mt-1">${progressText}</p></td>
-            <td class="p-3 text-right"><button type="button" data-enrollment-id="${row.enrollmentId}" class="standing-detail-button rounded-lg border border-stone-300 px-3 py-1.5 text-[10px] font-bold text-slate-700 hover:bg-stone-100">View Breakdown</button></td>
+            <td class="p-2.5"><span class="inline-flex rounded-full px-2 py-1 text-[8px] font-bold ${status.style}">${status.label}</span><p class="text-[8px] text-stone-400 mt-1">${progressText}</p></td>
+            <td class="p-2.5 text-right"><button type="button" data-enrollment-id="${row.enrollmentId}" class="standing-detail-button rounded-md border border-stone-300 px-2.5 py-1.5 text-[8px] font-bold text-slate-700 hover:bg-stone-100">View Breakdown</button></td>
         </tr>`;
     }).join('');
     tableBody.querySelectorAll('.standing-detail-button').forEach(button => {
@@ -557,24 +746,81 @@ function showStandingDetails(enrollmentId) {
     const student = course?.students.find(item => item.enrollmentId === enrollmentId);
     const dialog = document.getElementById('standingDialog');
     if (!course || !student) { dialog.close(); return; }
+    const rankedStudents = [...course.students]
+        .filter(item => item.percentage !== null)
+        .sort((a, b) => b.percentage - a.percentage);
+    const rank = student.percentage === null
+        ? null
+        : rankedStudents.filter(item => item.percentage > student.percentage).length + 1;
+    const topPercent = rank === null || rankedStudents.length === 0
+        ? null
+        : Math.max(1, Math.ceil(rank / rankedStudents.length * 100));
+    const overall = student.percentage === null ? null : Math.max(0, Math.min(100, Number(student.percentage)));
+    const scoreStatus = standingStatus(student);
+
+    document.getElementById('standingDialogInitials').textContent = student.student
+        .trim().split(/\s+/).slice(0, 2).map(part => part.charAt(0)).join('').toUpperCase();
     document.getElementById('standingDialogCourse').textContent = `${course.code} · ${course.title}`;
     document.getElementById('standingDialogStudent').textContent = student.student;
     document.getElementById('standingDialogEmail').textContent = student.email;
+    document.getElementById('standingDialogRankBadge').textContent = rank === null
+        ? 'Not ranked'
+        : `Rank #${rank} · Top ${topPercent}%`;
+    const benchmark = rankedStudents[0];
+    document.getElementById('standingDialogBenchmark').textContent = benchmark
+        ? `${formatPercentage(benchmark.percentage)} · ${benchmark.student}`
+        : 'No evaluated standings';
+    document.getElementById('standingDialogOverall').textContent = formatPercentage(overall);
+    const overallRing = document.getElementById('standingDialogOverallRing');
+    overallRing.style.background = overall === null
+        ? 'conic-gradient(#e7e5e4 0%, #e7e5e4 100%)'
+        : `conic-gradient(#6b0820 ${overall}%, #e7e5e4 ${overall}% 100%)`;
+    overallRing.setAttribute('aria-label', overall === null
+        ? 'No overall standing available'
+        : `Overall standing ${formatPercentage(overall)}`);
     const standingSummary = student.percentage === null
         ? student.status === 'Invalid weights' ? 'The grading weights need correction.' : 'No scores have been entered.'
-        : `${student.status === 'Complete' ? 'Current' : 'Provisional'} standing: ${formatPercentage(student.percentage)} · ${student.gradedWeight}% course weight covered${student.grade === null ? '' : ` · Final PUP grade: ${Number(student.grade).toFixed(2)}`}`;
+        : `${student.status === 'Complete' ? 'Current' : 'Provisional'} weighted score from saved assessments.`;
     document.getElementById('standingDialogSummary').textContent = standingSummary;
+    document.getElementById('standingDialogRank').textContent = rank === null ? 'Unranked' : `#${rank} in ${course.code}`;
+    document.getElementById('standingDialogEnrollment').textContent = `${rankedStudents.length} / ${course.students.length} ranked`;
+    document.getElementById('standingDialogCoverage').textContent = `${Number(student.gradedWeight).toFixed(1)}%`;
+    const statusElement = document.getElementById('standingDialogStatus');
+    statusElement.textContent = scoreStatus.label;
+    statusElement.className = `mt-1 text-[9px] font-extrabold ${
+        scoreStatus.style.includes('rose') ? 'text-rose-700'
+            : scoreStatus.style.includes('emerald') ? 'text-emerald-700'
+                : scoreStatus.style.includes('blue') ? 'text-blue-700'
+                    : scoreStatus.style.includes('amber') ? 'text-amber-800'
+                        : 'text-stone-600'
+    }`;
     document.getElementById('standingDialogBreakdown').innerHTML = student.components.map(component => {
+        const percentage = component.percentage === null
+            ? null
+            : Math.max(0, Math.min(100, Number(component.percentage)));
+        const effectiveWeight = Number(component.weight) / 2;
         const assessments = component.assessments.length
-            ? component.assessments.map(assessment => `<li class="flex justify-between gap-3 py-1 text-[11px] text-stone-500"><span>${escapeHtml(assessment.title)}</span><span>${Number(assessment.score)} / ${Number(assessment.max)}</span></li>`).join('')
-            : '<li class="py-1 text-[11px] italic text-stone-400">No scores entered</li>';
-        return `<section class="rounded-xl border border-stone-200 p-3">
-            <div class="flex items-center justify-between gap-3"><h3 class="text-xs font-bold text-slate-800">${periodLabels[component.period]} · ${escapeHtml(component.name)} <span class="font-medium text-stone-400">(${component.weight}%)</span></h3><span class="text-xs font-black text-slate-800">${formatPercentage(component.percentage)}</span></div>
-            <ul class="mt-2 border-t border-stone-100 pt-2">${assessments}</ul>
-        </section>`;
-    }).join('') || '<p class="text-xs text-stone-500">This course has no grading components.</p>';
+            ? component.assessments.map(assessment => `<li class="flex justify-between gap-2 py-1 text-[8px] text-stone-500"><span class="truncate">${escapeHtml(assessment.title)}</span><span class="shrink-0 font-semibold">${Number(assessment.score)} / ${Number(assessment.max)}</span></li>`).join('')
+            : '<li class="py-1 text-[8px] italic text-stone-400">No scores entered</li>';
+        const ringColor = percentage === null ? '#d6d3d1' : percentage >= 90 ? '#15803d' : percentage >= 75 ? '#1d4ed8' : '#c2410c';
+        return `<article class="rounded-lg border border-stone-100 bg-[#fbfaf8] p-2.5 text-center">
+            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full" style="background:conic-gradient(${ringColor} ${percentage ?? 0}%, #e7e5e4 ${percentage ?? 0}% 100%)" role="img" aria-label="${escapeHtml(component.name)}: ${formatPercentage(percentage)}">
+                <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[9px] font-black text-slate-800">${formatPercentage(percentage)}</div>
+            </div>
+            <h4 class="mt-2 line-clamp-2 min-h-6 text-[8px] font-extrabold text-slate-800">${escapeHtml(component.name)}</h4>
+            <p class="text-[7px] text-stone-500">${periodLabels[component.period]} · ${effectiveWeight}% course weight</p>
+            <p class="mt-1 text-[7px] font-semibold ${percentage === null ? 'text-stone-400' : 'text-emerald-700'}">${percentage === null ? 'Pending scores' : `${Number(component.score)} / ${Number(component.max)} points`}</p>
+            <details class="mt-2 border-t border-stone-200 pt-1.5 text-left">
+                <summary class="cursor-pointer text-[7px] font-bold text-stone-500">Assessment scores</summary>
+                <ul class="mt-1">${assessments}</ul>
+            </details>
+        </article>`;
+    }).join('') || '<p class="col-span-full text-center text-[9px] text-stone-500">This course has no grading components.</p>';
     dialog.dataset.enrollmentId = String(enrollmentId);
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) {
+        setStandingDialogScrollLock(true);
+        dialog.showModal();
+    }
 }
 
 function escapeHtml(value) {
