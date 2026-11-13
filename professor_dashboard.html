@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Portal - Class Standing</title>
+    <title>Grade Tracker - Class Standing</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,22 +12,25 @@
 <body class="bg-[#f8f6f2] text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
     <!-- Header Navigation -->
-    <header class="bg-maroon-900 text-white h-14 sticky top-0 z-40 shadow-md flex items-center justify-between px-6">
+    <header class="bg-maroon-900 text-white h-14 sticky top-0 z-40 shadow-md flex items-center justify-between px-5 sm:px-7">
         <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-xs border border-white/20">
-                <i class="fa-solid fa-chalkboard-user"></i>
+            <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-xs border border-white/20">
+                <i class="fa-solid fa-graduation-cap"></i>
             </div>
-            <span class="font-extrabold text-base tracking-wide">Faculty Portal</span>
+            <span class="font-extrabold text-sm sm:text-base tracking-wide">Grade Tracker</span>
         </div>
 
         <div class="flex items-center space-x-4">
-            <div class="flex items-center space-x-6 text-sm">
-                <div class="flex items-center space-x-2.5">
-                    <div id="userInitial" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-xs text-white"></div>
-                    <span id="userNameDisplay" class="font-semibold text-xs sm:text-sm hidden lg:inline"></span>
+            <div class="flex items-center space-x-4 text-sm">
+                <div class="flex items-center space-x-2">
+                    <div id="userInitial" class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-bold text-[10px] text-white"></div>
+                    <div class="hidden sm:block">
+                        <span id="userNameDisplay" class="font-semibold text-xs block"></span>
+                        <span class="text-[9px] text-maroon-200">Professor Dashboard</span>
+                    </div>
                 </div>
 
-                <button type="button" id="logoutBtn" class="text-xs font-semibold text-maroon-200 hover:text-white transition flex items-center space-x-1.5">
+                <button type="button" id="logoutBtn" class="text-[11px] font-semibold text-maroon-200 hover:text-white transition flex items-center space-x-1.5 border border-white/20 rounded-lg px-2.5 py-1.5">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     <span class="hidden sm:inline">Logout</span>
                 </button>
@@ -37,25 +40,29 @@
 
     <div class="flex flex-1 w-full">
         <!-- Sidebar Navigation -->
-        <aside class="w-64 bg-[#f1ede6] border-r border-stone-300 p-4 shrink-0 flex flex-col justify-between hidden md:flex">
-            <div class="space-y-1">
-                <button type="button" onclick="switchProfessorTab('standing')" id="nav-standing" class="w-full text-left px-4 py-3 rounded-xl font-bold text-xs flex items-center space-x-3 bg-maroon-100 text-maroon-900 border border-maroon-200">
-                    <i class="fa-solid fa-ranking-star text-sm"></i>
-                    <span>Class Standing</span>
-                </button>
-                <button type="button" onclick="switchProfessorTab('templates')" id="nav-templates" class="w-full text-left px-4 py-3 rounded-xl font-medium text-xs text-stone-700 hover:bg-stone-200/60 transition flex items-center space-x-3">
-                    <i class="fa-solid fa-sliders text-sm"></i>
-                    <span>Course Templates</span>
-                </button>
+        <aside class="w-56 lg:w-60 bg-[#f4f1eb] border-r border-stone-200 px-3 py-5 shrink-0 hidden md:flex flex-col justify-between">
+            <div>
+                <p class="px-3 pb-2 text-[9px] uppercase tracking-wider font-extrabold text-stone-400">Main Menu</p>
+                <div class="space-y-1">
+                    <button type="button" onclick="switchProfessorTab('standing')" id="nav-standing" class="w-full text-left px-3 py-2.5 rounded-lg font-bold text-[11px] flex items-center space-x-3 bg-[#eee8dc] text-maroon-900 border border-[#e5ddcf]">
+                        <i class="fa-solid fa-chart-column w-4 text-center"></i>
+                        <span>Class Standing</span>
+                    </button>
+                    <button type="button" onclick="switchProfessorTab('templates')" id="nav-templates" class="w-full text-left px-3 py-2.5 rounded-lg font-medium text-[11px] text-stone-600 hover:bg-stone-200/60 transition flex items-center space-x-3">
+                        <i class="fa-solid fa-book-open w-4 text-center"></i>
+                        <span>Course Templates</span>
+                    </button>
+                </div>
             </div>
 
-            <div class="pt-4 border-t border-stone-300/80 text-[11px] text-stone-500 font-medium">
-                <p>Professor Account</p>
+            <div class="pt-3 border-t border-stone-300/70 text-[10px] text-stone-500 font-medium flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <p id="standingRefreshStatus" role="status">Loading standings...</p>
             </div>
         </aside>
 
         <!-- Main Workspace -->
-        <main class="flex-1 p-6 sm:p-8 space-y-6 max-w-7xl">
+        <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-7 space-y-5">
             <div class="flex gap-2 md:hidden">
                 <button type="button" id="mobile-standing" onclick="switchProfessorTab('standing')" class="flex-1 rounded-xl bg-maroon-900 px-3 py-2 text-xs font-bold text-white">Class Standing</button>
                 <button type="button" id="mobile-templates" onclick="switchProfessorTab('templates')" class="flex-1 rounded-xl bg-stone-200 px-3 py-2 text-xs font-bold text-stone-700">Course Templates</button>
@@ -63,198 +70,319 @@
 
             <div id="professorAlerts" class="space-y-3"></div>
 
-            <section id="standingSection" class="space-y-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-stone-300/60">
+            <section id="standingSection" class="space-y-4">
+                <div class="flex items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Class Standing Overview</h2>
-                        <p class="text-xs font-semibold text-stone-500 mt-0.5">Current standings from saved scores. Updates automatically every 15 seconds.</p>
-                        <p id="standingRefreshStatus" role="status" class="text-[11px] text-stone-400 mt-1">Loading standings...</p>
+                        <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Class Standing Overview</h2>
+                        <p class="text-[10px] text-stone-500 mt-0.5">Current standings from saved scores · Updated automatically</p>
                     </div>
-                    <span id="standingDate" class="text-xs sm:text-sm font-semibold text-stone-500"></span>
+                    <span id="standingDate" class="hidden sm:inline text-[10px] font-semibold text-stone-400"></span>
                 </div>
 
-                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col sm:flex-row sm:items-center gap-3">
-                    <label for="courseFilter" class="text-xs font-bold text-stone-600">Course</label>
-                    <select id="courseFilter" class="w-full sm:w-auto min-w-64 px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold text-slate-800">
-                        <option value="all">All Courses (Ranked Within Each Course)</option>
+                <div class="bg-white px-3.5 py-3 rounded-xl border border-stone-200 shadow-sm flex flex-col sm:flex-row sm:items-center gap-2.5">
+                    <label for="courseFilter" class="text-[10px] font-bold text-stone-600 whitespace-nowrap"><i class="fa-regular fa-folder-open text-maroon-800 mr-1"></i>Course / Section:</label>
+                    <select id="courseFilter" class="w-full sm:w-auto sm:min-w-72 px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-[10px] font-bold text-slate-800">
+                        <option value="all">All Enrolled Sections (Overall Standing)</option>
                     </select>
-                    <p id="courseScopeLabel" class="sm:ml-auto text-xs text-stone-500">Across all your active classes</p>
+                    <p id="courseScopeLabel" class="sm:ml-auto text-[10px] text-stone-500">Across all your active classes</p>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <article class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
-                        <p class="text-[10px] uppercase tracking-wide font-bold text-stone-400">Top Performer</p>
-                        <p id="topPerformerValue" class="mt-2 text-xl font-black text-slate-900">—</p>
-                        <p id="topPerformerName" class="text-xs text-stone-500 mt-1">No graded students</p>
-                    </article>
-                    <article class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
-                        <p class="text-[10px] uppercase tracking-wide font-bold text-stone-400">Average Current Standing</p>
-                        <p id="classAverageValue" class="mt-2 text-xl font-black text-slate-900">—</p>
-                        <p class="text-xs text-stone-500 mt-1">Weighted average of scored components</p>
-                    </article>
-                    <article class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
-                        <p class="text-[10px] uppercase tracking-wide font-bold text-stone-400">Total Enrollments</p>
-                        <p id="enrolledCountValue" class="mt-2 text-xl font-black text-slate-900">0</p>
-                        <p id="courseCountNote" class="text-xs text-stone-500 mt-1">Across 0 courses</p>
-                    </article>
-                    <article class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
-                        <p class="text-[10px] uppercase tracking-wide font-bold text-stone-400">At Risk (&lt;75%)</p>
-                        <p id="atRiskValue" class="mt-2 text-xl font-black text-rose-700">0 Students</p>
-                        <p class="text-xs text-rose-700 mt-1">Current standing below 75%</p>
-                    </article>
-                </div>
-
-                <section class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                            <h3 class="font-bold text-slate-800">Course Standing Summary</h3>
-                            <p class="text-xs text-stone-500 mt-1">Standing averages only components with saved scores, using their course weights. Recorded zeros count; unentered components stay pending.</p>
-                        </div>
-                        <span class="text-[11px] text-stone-400">Ranks are provisional until all components have scores.</span>
+                <section class="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
+                    <div class="grid grid-cols-2 xl:grid-cols-4 divide-x divide-y xl:divide-y-0 divide-stone-100">
+                        <article class="px-4 py-3">
+                            <p class="text-[9px] uppercase tracking-wide font-bold text-stone-400">Top Performer</p>
+                            <p id="topPerformerValue" class="mt-1 text-base font-black text-slate-900">—</p>
+                            <p id="topPerformerName" class="text-[9px] text-stone-500 mt-0.5 truncate">No graded students</p>
+                        </article>
+                        <article class="px-4 py-3">
+                            <p class="text-[9px] uppercase tracking-wide font-bold text-stone-400">Average Standing</p>
+                            <p id="classAverageValue" class="mt-1 text-base font-black text-slate-900">—</p>
+                            <p class="text-[9px] text-stone-500 mt-0.5">Based on saved scores</p>
+                        </article>
+                        <article class="px-4 py-3">
+                            <p class="text-[9px] uppercase tracking-wide font-bold text-stone-400">Total Enrollments</p>
+                            <p id="enrolledCountValue" class="mt-1 text-base font-black text-slate-900">0</p>
+                            <p id="courseCountNote" class="text-[9px] text-stone-500 mt-0.5">Across 0 courses</p>
+                        </article>
+                        <article class="px-4 py-3">
+                            <p class="text-[9px] uppercase tracking-wide font-bold text-stone-400">At Risk (&lt;75%)</p>
+                            <p id="atRiskValue" class="mt-1 text-base font-black text-rose-700">0 Students</p>
+                            <p class="text-[9px] text-rose-600 mt-0.5">Current standing below 75%</p>
+                        </article>
                     </div>
-                    <div id="courseSummaryList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
                 </section>
 
-                <section class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm space-y-4">
+                <div id="courseSummaryList" class="hidden" aria-hidden="true"></div>
+
+                <section class="bg-white rounded-xl border border-stone-200 shadow-sm p-3 sm:p-4 space-y-3">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <div>
+                            <h3 class="text-xs font-extrabold text-slate-800"><i class="fa-solid fa-chart-simple text-maroon-800 mr-1.5"></i>Class Standing Distribution</h3>
+                            <p class="text-[9px] text-stone-500 mt-0.5">Distribution of students' current overall standings</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 text-[9px]">
+                            <span class="inline-flex items-center gap-1.5 rounded-md bg-stone-50 px-2 py-1 text-stone-600 border border-stone-100"><span class="w-2 h-2 rounded-sm bg-maroon-100 border border-maroon-200"></span>Student count</span>
+                            <span class="inline-flex items-center gap-1.5 rounded-md bg-stone-50 px-2 py-1 text-stone-600 border border-stone-100"><span class="w-3 h-0.5 bg-maroon-900"></span>Normal curve</span>
+                        </div>
+                    </div>
+                    <div class="overflow-hidden">
+                        <svg id="distributionChart" viewBox="0 0 760 220" role="img" aria-label="Distribution of students by current overall standing" class="w-full min-h-44"></svg>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-2 text-[9px] text-stone-500">
+                        <span id="distributionSummary">No evaluated standings available.</span>
+                        <span class="text-stone-400">Scores are provisional when grading components remain unentered.</span>
+                    </div>
+                </section>
+
+                <section class="bg-white p-3 sm:p-4 rounded-xl border border-stone-200 shadow-sm space-y-3">
                     <div class="flex flex-col gap-3">
                         <div class="flex items-center justify-between gap-3 flex-wrap">
-                            <h3 class="font-bold text-slate-800"><i class="fa-solid fa-award text-maroon-800 mr-2"></i>Class Standing Leaderboard</h3>
-                            <label class="text-xs text-stone-500">Sort
-                                <select id="rankSort" class="ml-1 px-2 py-1.5 rounded-lg border border-stone-300 text-xs font-semibold text-slate-700">
+                            <h3 class="text-xs font-extrabold text-slate-800"><i class="fa-solid fa-award text-maroon-800 mr-1.5"></i>Class Standing Leaderboard</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] text-stone-500 hidden sm:inline">Sort:</span>
+                                <select id="rankSort" aria-label="Sort leaderboard" class="px-2 py-1.5 rounded-lg border border-stone-200 bg-white text-[9px] font-semibold text-slate-700">
                                     <option value="desc">Highest to lowest</option>
                                     <option value="asc">Lowest to highest</option>
                                     <option value="name">Student name</option>
                                 </select>
-                            </label>
+                            </div>
                         </div>
                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" data-standing-filter="all" class="standing-filter px-3 py-2 rounded-full bg-maroon-900 text-white text-[11px] font-bold">All Students</button>
-                                <button type="button" data-standing-filter="top" class="standing-filter px-3 py-2 rounded-full bg-stone-100 text-stone-700 text-[11px] font-bold">Top Performers (&ge;90%)</button>
-                                <button type="button" data-standing-filter="risk" class="standing-filter px-3 py-2 rounded-full bg-stone-100 text-stone-700 text-[11px] font-bold">At Risk (&lt;75%)</button>
+                                <button type="button" data-standing-filter="all" class="standing-filter px-3 py-1.5 rounded-full bg-maroon-900 text-white text-[9px] font-bold">All Students</button>
+                                <button type="button" data-standing-filter="top" class="standing-filter px-3 py-1.5 rounded-full bg-stone-100 text-stone-700 text-[9px] font-bold">Top Performers (&ge;90%)</button>
+                                <button type="button" data-standing-filter="risk" class="standing-filter px-3 py-1.5 rounded-full bg-stone-100 text-stone-700 text-[9px] font-bold">At Risk (&lt;75%)</button>
                             </div>
-                            <input id="studentSearch" type="search" placeholder="Search students..." class="w-full md:w-64 px-3 py-2 rounded-xl border border-stone-300 text-xs outline-none focus:border-maroon-800">
+                            <input id="studentSearch" type="search" placeholder="Search student..." class="w-full md:w-52 px-3 py-2 rounded-lg border border-stone-200 text-[10px] outline-none focus:border-maroon-800">
                         </div>
                     </div>
-                    <p class="text-[11px] text-stone-500">Coverage is the course weight represented by components with saved scores. It does not mean all assessments in those components are finished.</p>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs min-w-[900px]">
+                        <table class="w-full text-left border-collapse text-[10px] min-w-[900px]">
                             <thead id="standingTableHead"></thead>
                             <tbody id="standingTableBody" class="divide-y divide-stone-100"></tbody>
                         </table>
                     </div>
-                    <p id="standingEmptyState" class="hidden text-center text-xs text-stone-500 py-8">No students match these filters.</p>
+                    <p id="standingEmptyState" class="hidden text-center text-[10px] text-stone-500 py-8">No students match these filters.</p>
+                    <p class="text-[9px] text-stone-400">Coverage is the course weight represented by components with saved scores. Ranks are provisional until all components have scores.</p>
                 </section>
             </section>
 
-            <section id="templatesSection" class="hidden space-y-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-stone-300/60">
+            <section id="templatesSection" class="hidden space-y-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Professor Syllabus Templates</h2>
-                        <p class="text-xs font-semibold text-stone-500 mt-0.5">Design course evaluation components and generate enrollment sync codes for students.</p>
+                        <p class="mb-1 text-[9px] font-bold uppercase tracking-wider text-maroon-800">Academics <span class="mx-1 text-stone-300">/</span> Syllabus Configuration</p>
+                        <h2 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900">Grade Template Builder</h2>
+                        <p class="mt-1 text-[10px] text-stone-500">Define grading components and weights, then share a class code with students.</p>
                     </div>
-                    <span id="templatesDate" class="text-xs sm:text-sm font-semibold text-stone-500"></span>
+                    <div class="flex items-center gap-2">
+                        <span id="templatesDate" class="hidden text-[10px] font-semibold text-stone-400 md:inline"></span>
+                        <button type="button" onclick="resetTemplateForm()" class="rounded-lg border border-stone-300 bg-white px-3 py-2 text-[9px] font-bold text-stone-600 hover:bg-stone-50">
+                            <i class="fa-solid fa-rotate-left mr-1"></i>Reset Template
+                        </button>
+                        <button type="submit" form="publishTemplateForm" name="btnPublishTemplate" class="rounded-lg bg-maroon-900 px-3.5 py-2 text-[9px] font-bold text-white shadow-sm hover:bg-maroon-800">
+                            <i class="fa-solid fa-floppy-disk mr-1"></i><span id="publishTemplateButtonText">Save &amp; Generate Code</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- Syllabus Builder Form -->
-                <div id="templateEditor" class="lg:col-span-7 bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-5">
-                    <div class="flex items-center justify-between border-b border-stone-100 pb-3">
-                        <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
-                            <i class="fa-solid fa-sliders text-maroon-800"></i>
-                            <span id="templateEditorTitle">Create Course Template</span>
-                        </h3>
-                        <span class="text-xs text-stone-500">Each period: 100%</span>
+
+                <div class="grid grid-cols-1 items-start gap-4 xl:grid-cols-12">
+                    <div id="templateEditor" class="space-y-3 xl:col-span-8">
+                        <form id="publishTemplateForm" onsubmit="return validatePublishForm(event)" class="space-y-3 text-xs">
+                            <input type="hidden" name="template_id" id="templateIdInput" value="0">
+                            <section class="rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+                                <div class="mb-3 flex items-center justify-between border-b border-stone-100 pb-2">
+                                    <div>
+                                        <h3 class="text-[10px] font-extrabold uppercase tracking-wide text-slate-800">Course Overview</h3>
+                                        <p id="templateEditorTitle" class="mt-0.5 text-[9px] text-stone-500">Create a new course template</p>
+                                    </div>
+                                    <i class="fa-regular fa-rectangle-list text-sm text-stone-300"></i>
+                                </div>
+                                <p id="editingTemplateNote" class="mb-3 rounded-lg bg-amber-50 p-2 text-[9px] text-amber-800 hidden"></p>
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-12">
+                                    <div class="sm:col-span-3">
+                                        <label for="courseCodeInput" class="mb-1 block text-[8px] font-bold text-stone-500">COURSE CODE</label>
+                                        <input type="text" name="courseCode" id="courseCodeInput" placeholder="e.g. CS-301" maxlength="20" required class="w-full rounded-lg border border-stone-300 px-2.5 py-2 text-[10px] font-semibold text-slate-800 outline-none focus:border-maroon-800">
+                                    </div>
+                                    <div class="sm:col-span-7">
+                                        <label for="courseTitleInput" class="mb-1 block text-[8px] font-bold text-stone-500">COURSE TITLE</label>
+                                        <input type="text" name="courseTitle" id="courseTitleInput" placeholder="Enter course title" maxlength="100" required class="w-full rounded-lg border border-stone-300 px-2.5 py-2 text-[10px] font-semibold text-slate-800 outline-none focus:border-maroon-800">
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label for="courseUnitInput" class="mb-1 block text-[8px] font-bold text-stone-500">UNITS</label>
+                                        <input type="number" name="courseUnit" id="courseUnitInput" placeholder="Units" min="0.1" max="99.9" step="0.1" required class="w-full rounded-lg border border-stone-300 px-2.5 py-2 text-[10px] font-semibold text-slate-800 outline-none focus:border-maroon-800">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+                                <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        <h3 class="text-[10px] font-extrabold uppercase tracking-wide text-slate-800">Evaluation Breakdown</h3>
+                                        <p class="mt-0.5 text-[9px] text-stone-500">Each period must total exactly 100%. Mark up to one exam per period.</p>
+                                    </div>
+                                    <span class="rounded-md bg-stone-50 px-2 py-1 text-[8px] font-semibold text-stone-500"><i class="fa-solid fa-scale-balanced mr-1"></i>Midterms + Finals</span>
+                                </div>
+
+                                <section class="period-components border-t border-stone-100 py-3 first:border-0 first:pt-0" data-period="midterms">
+                                    <div class="mb-2 flex items-center justify-between gap-2">
+                                        <h4 class="text-[9px] font-extrabold text-maroon-900">Midterms Components</h4>
+                                        <span id="weightTotalBadge-midterms" class="rounded-full bg-rose-50 px-2 py-1 text-[8px] font-bold text-rose-700">0% / 100%</span>
+                                    </div>
+                                    <div class="mb-1 hidden grid-cols-[minmax(0,1fr)_5rem_4rem_1.5rem] gap-2 px-2 text-[7px] font-bold uppercase tracking-wide text-stone-400 sm:grid">
+                                        <span>Category name</span><span>Weight (%)</span><span>Exam</span><span>Action</span>
+                                    </div>
+                                    <div class="space-y-1.5" id="componentContainer-midterms"></div>
+                                    <button type="button" onclick="addComponentRow('midterms')" class="mt-2 rounded-md border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-[8px] font-bold text-stone-700 hover:bg-stone-100"><i class="fa-solid fa-plus mr-1"></i>Add Midterms Component</button>
+                                </section>
+
+                                <section class="period-components border-t border-stone-100 py-3" data-period="finals">
+                                    <div class="mb-2 flex items-center justify-between gap-2">
+                                        <h4 class="text-[9px] font-extrabold text-maroon-900">Finals Components</h4>
+                                        <span id="weightTotalBadge-finals" class="rounded-full bg-rose-50 px-2 py-1 text-[8px] font-bold text-rose-700">0% / 100%</span>
+                                    </div>
+                                    <div class="mb-1 hidden grid-cols-[minmax(0,1fr)_5rem_4rem_1.5rem] gap-2 px-2 text-[7px] font-bold uppercase tracking-wide text-stone-400 sm:grid">
+                                        <span>Category name</span><span>Weight (%)</span><span>Exam</span><span>Action</span>
+                                    </div>
+                                    <div class="space-y-1.5" id="componentContainer-finals"></div>
+                                    <button type="button" onclick="addComponentRow('finals')" class="mt-2 rounded-md border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-[8px] font-bold text-stone-700 hover:bg-stone-100"><i class="fa-solid fa-plus mr-1"></i>Add Finals Component</button>
+                                </section>
+                                <div class="mt-1 border-t border-stone-100 pt-3">
+                                    <div class="mb-1 flex items-center justify-between text-[8px]">
+                                        <span class="font-semibold text-stone-600">Overall distribution validation</span>
+                                        <span id="overallWeightStatus" class="font-bold text-rose-700">Complete both periods to 100%</span>
+                                    </div>
+                                    <div class="h-1.5 overflow-hidden rounded-full bg-stone-100">
+                                        <div id="overallWeightProgress" class="h-full w-0 rounded-full bg-emerald-500 transition-all"></div>
+                                    </div>
+                                </div>
+                            </section>
+                            <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+                                <a id="cancelEditingLink" href="professor_dashboard.html#templates" class="hidden text-[9px] font-bold text-stone-500 hover:text-maroon-900">Cancel editing</a>
+                                <p class="ml-auto text-[8px] text-stone-400">Class codes are generated when a template is first published.</p>
+                            </div>
+                        </form>
                     </div>
 
-                    <p id="editingTemplateNote" class="text-xs text-stone-600 hidden"></p>
-
-                    <form id="publishTemplateForm" onsubmit="return validatePublishForm(event)" class="space-y-4 text-xs">
-                        <input type="hidden" name="template_id" id="templateIdInput" value="0">
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            <div>
-                                <label class="block font-bold uppercase text-stone-600 mb-1">Course Code</label>
-                                <input type="text" name="courseCode" id="courseCodeInput" placeholder="Enter course code" maxlength="20" required class="w-full px-3 py-2 rounded-xl border border-stone-300 font-bold text-slate-800 focus:border-maroon-800 outline-none">
+                    <aside class="space-y-3 xl:col-span-4">
+                        <section class="rounded-xl border border-stone-200 bg-white p-4 text-center shadow-sm sm:p-5">
+                            <div class="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-amber-50 text-amber-600"><i class="fa-solid fa-key text-xs"></i></div>
+                            <h3 class="mt-2 text-[9px] font-extrabold uppercase tracking-wide text-slate-800">Class Distribution Code</h3>
+                            <p class="mt-1 text-[8px] text-stone-400">Share this code with students to join your class.</p>
+                            <div class="mt-3 rounded-lg border border-stone-200 bg-[#fbf9f5] p-3">
+                                <p id="classCodeCourseLabel" class="text-[7px] font-bold uppercase tracking-wide text-maroon-800">New class template</p>
+                                <p id="classCodeDisplay" class="mt-1 font-mono text-lg font-black tracking-[0.18em] text-slate-800">—</p>
+                                <button id="copyClassCodeButton" type="button" onclick="copyActiveClassCode()" disabled class="mt-2 rounded-md bg-maroon-900 px-3 py-1.5 text-[8px] font-bold text-white hover:bg-maroon-800 disabled:cursor-not-allowed disabled:opacity-40"><i class="fa-regular fa-copy mr-1"></i>Copy Code</button>
+                                <p id="classCodeCopyStatus" role="status" class="mt-1 min-h-3 text-[7px] text-emerald-700"></p>
                             </div>
-                            <div>
-                                <label class="block font-bold uppercase text-stone-600 mb-1">Course Title</label>
-                                <input type="text" name="courseTitle" id="courseTitleInput" placeholder="Enter course title" maxlength="100" required class="w-full px-3 py-2 rounded-xl border border-stone-300 font-bold text-slate-800 focus:border-maroon-800 outline-none">
+                            <div class="mt-3 flex items-center justify-between text-[8px] text-stone-500">
+                                <span>Students Enrolled</span><strong id="classCodeEnrollmentCount" class="text-slate-800">—</strong>
                             </div>
-                            <div>
-                                <label for="courseUnitInput" class="block font-bold uppercase text-stone-600 mb-1">Unit</label>
-                                <input type="number" name="courseUnit" id="courseUnitInput" placeholder="Enter units" min="0.1" max="99.9" step="0.1" required class="w-full px-3 py-2 rounded-xl border border-stone-300 font-bold text-slate-800 focus:border-maroon-800 outline-none">
+                            <div class="mt-2 flex items-center justify-between text-[8px] text-stone-500">
+                                <span>Sync Status</span><span id="classCodeSyncStatus" class="rounded-full bg-stone-100 px-2 py-1 font-bold text-stone-500">Not published</span>
                             </div>
-                        </div>
-
-                        <section class="period-components space-y-3 p-4 bg-stone-50 rounded-2xl border border-stone-200" data-period="midterms">
-                            <div class="flex flex-wrap items-center justify-between gap-2">
-                                <h4 class="font-bold text-maroon-900">Midterms</h4>
-                                <span id="weightTotalBadge-midterms" class="text-xs font-bold text-rose-700">Total Weight: 0%</span>
-                            </div>
-                            <p class="text-[11px] text-stone-500">Weights must total 100%. You may mark up to one component as an exam.</p>
-                            <div class="space-y-2" id="componentContainer-midterms"></div>
-                            <button type="button" onclick="addComponentRow('midterms')" class="text-xs font-bold text-maroon-800 hover:underline">+ Add Midterms Component</button>
                         </section>
 
-                        <section class="period-components space-y-3 p-4 bg-stone-50 rounded-2xl border border-stone-200" data-period="finals">
-                            <div class="flex flex-wrap items-center justify-between gap-2">
-                                <h4 class="font-bold text-maroon-900">Finals</h4>
-                                <span id="weightTotalBadge-finals" class="text-xs font-bold text-rose-700">Total Weight: 0%</span>
+                        <section class="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+                            <div class="flex items-center justify-between gap-2">
+                                <h3 class="text-[9px] font-extrabold text-slate-800">How Class Codes Work</h3>
+                                <span class="rounded bg-amber-50 px-1.5 py-1 text-[7px] font-bold uppercase text-amber-700">Auto sync</span>
                             </div>
-                            <p class="text-[11px] text-stone-500">Weights must total 100%. You may mark up to one component as an exam.</p>
-                            <div class="space-y-2" id="componentContainer-finals"></div>
-                            <button type="button" onclick="addComponentRow('finals')" class="text-xs font-bold text-maroon-800 hover:underline">+ Add Finals Component</button>
+                            <p class="mt-2 text-[8px] leading-relaxed text-stone-500">After you publish, students can enter the class code from their dashboard. Your course evaluation weights will be added to their grade tracker automatically.</p>
                         </section>
 
-                        <div class="pt-4 border-t border-stone-200">
-                            <button type="submit" name="btnPublishTemplate" class="w-full py-3 bg-maroon-900 hover:bg-maroon-800 text-white font-bold text-xs rounded-xl shadow-md transition text-center">
-                                Publish Syllabus & Generate Class Code
-                            </button>
-                            <a id="cancelEditingLink" href="professor_dashboard.html#templates" class="block mt-3 text-center font-bold text-stone-600 hover:underline hidden">Cancel Editing</a>
-                        </div>
-                    </form>
+                        <section class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-[9px] font-extrabold text-slate-800">Active Course Templates</h3>
+                                <span id="templateCountBadge" class="rounded-full bg-stone-100 px-2 py-0.5 text-[7px] font-bold text-stone-500">0 templates</span>
+                            </div>
+                            <div class="space-y-2" id="publishedTemplatesList"></div>
+                        </section>
+                    </aside>
                 </div>
-
-                <!-- Template List Display -->
-                <div class="lg:col-span-5 space-y-4">
-                    <h3 class="font-bold text-slate-800 text-base">Active Course Templates</h3>
-                    <div class="space-y-3" id="publishedTemplatesList"></div>
-                </div>
-            </div>
             </section>
 
         </main>
     </div>
 
-    <dialog id="standingDialog" class="w-[min(42rem,calc(100%-2rem))] rounded-2xl p-0 shadow-2xl backdrop:bg-slate-950/40">
-        <div class="p-5 sm:p-6">
-            <div class="flex items-start justify-between gap-4 border-b border-stone-200 pb-4">
-                <div>
-                    <p id="standingDialogCourse" class="text-[11px] font-bold uppercase text-stone-500"></p>
-                    <h2 id="standingDialogStudent" class="mt-1 text-xl font-black text-slate-900"></h2>
-                    <p id="standingDialogEmail" class="mt-1 text-xs text-stone-500"></p>
-                    <p id="standingDialogSummary" class="mt-2 text-xs font-semibold text-slate-700"></p>
+    <dialog id="standingDialog" class="w-[min(42rem,calc(100%-2rem))] max-h-[90vh] overflow-y-auto overscroll-contain rounded-2xl p-0 shadow-2xl backdrop:bg-slate-950/50">
+        <div class="overflow-hidden rounded-2xl bg-[#fbf9f5]">
+            <header class="bg-maroon-900 px-5 py-4 text-white sm:px-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex min-w-0 items-center gap-3">
+                        <div id="standingDialogInitials" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/15 text-xs font-extrabold"></div>
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h2 id="standingDialogStudent" class="truncate text-base font-extrabold"></h2>
+                                <span id="standingDialogRankBadge" class="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wide text-amber-900"></span>
+                            </div>
+                            <p id="standingDialogEmail" class="mt-0.5 truncate text-[10px] text-maroon-200"></p>
+                            <p id="standingDialogCourse" class="mt-1 text-[10px] font-medium text-white/80"></p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="document.getElementById('standingDialog').close()" aria-label="Close breakdown" class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <button type="button" onclick="document.getElementById('standingDialog').close()" aria-label="Close breakdown" class="text-stone-400 hover:text-stone-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </header>
+            <div class="space-y-3 p-4 sm:p-5">
+                <section class="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white p-3 sm:grid-cols-[auto_1fr_1.2fr] sm:items-center sm:p-4">
+                    <div id="standingDialogOverallRing" class="mx-auto flex h-20 w-20 items-center justify-center rounded-full sm:mx-0" role="img">
+                        <div class="flex h-[4.1rem] w-[4.1rem] flex-col items-center justify-center rounded-full bg-white">
+                            <strong id="standingDialogOverall" class="text-sm font-black text-maroon-900"></strong>
+                            <span class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Overall</span>
+                        </div>
+                    </div>
+                    <div class="text-center sm:text-left">
+                        <p class="text-[8px] font-extrabold text-stone-500"><i class="fa-solid fa-arrow-trend-up mr-1 text-emerald-600"></i>Highest Cohort Benchmark</p>
+                        <p id="standingDialogBenchmark" class="mt-1 text-[11px] font-extrabold text-slate-800"></p>
+                        <p id="standingDialogSummary" class="mt-1 text-[9px] leading-relaxed text-stone-600"></p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <article class="rounded-lg border border-stone-100 bg-stone-50 p-2 text-center">
+                            <p class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Course Rank</p>
+                            <p id="standingDialogRank" class="mt-1 text-[10px] font-extrabold text-maroon-900"></p>
+                        </article>
+                        <article class="rounded-lg border border-stone-100 bg-stone-50 p-2 text-center">
+                            <p class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Enrollment</p>
+                            <p id="standingDialogEnrollment" class="mt-1 text-[10px] font-extrabold text-slate-800"></p>
+                        </article>
+                        <article class="rounded-lg border border-stone-100 bg-stone-50 p-2 text-center">
+                            <p class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Weight Covered</p>
+                            <p id="standingDialogCoverage" class="mt-1 text-[10px] font-extrabold text-slate-800"></p>
+                        </article>
+                        <article class="rounded-lg border border-stone-100 bg-stone-50 p-2 text-center">
+                            <p class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Status</p>
+                            <p id="standingDialogStatus" class="mt-1 text-[10px] font-extrabold text-slate-800"></p>
+                        </article>
+                    </div>
+                </section>
+                <section class="rounded-xl border border-stone-200 bg-white p-3 sm:p-4">
+                    <div class="mb-3 flex items-center justify-between gap-2 border-b border-stone-100 pb-2">
+                        <h3 class="text-[10px] font-extrabold text-slate-800"><i class="fa-solid fa-chart-column mr-1 text-maroon-800"></i>Component Evaluation Breakdown</h3>
+                        <span class="text-[8px] text-stone-400">Circular metrics</span>
+                    </div>
+                    <div id="standingDialogBreakdown" class="grid grid-cols-2 gap-2 sm:grid-cols-3"></div>
+                </section>
+                <p class="px-1 text-[8px] leading-relaxed text-stone-400">Component percentages are calculated from saved assessment scores. Each component's course weight is half its configured period weight.</p>
             </div>
-            <div id="standingDialogBreakdown" class="mt-4 space-y-3"></div>
+            <footer class="flex justify-end border-t border-stone-200 bg-[#f7f3eb] px-4 py-3">
+                <button type="button" onclick="document.getElementById('standingDialog').close()" class="rounded-lg bg-maroon-900 px-4 py-2 text-[9px] font-bold text-white hover:bg-maroon-800">Close Breakdown</button>
+            </footer>
         </div>
     </dialog>
 
     <template id="componentRowTemplate">
-        <div class="flex flex-wrap items-center gap-2 component-row">
+        <div class="grid grid-cols-1 items-center gap-2 rounded-lg border border-stone-100 bg-white p-2 sm:grid-cols-[minmax(0,1fr)_5rem_4rem_1.5rem] sm:border-0 sm:bg-transparent sm:p-0 component-row">
             <input type="hidden" class="comp-id" value="">
-            <input type="text" placeholder="Assessment name" maxlength="100" required class="comp-name min-w-0 w-full sm:w-auto sm:flex-1 px-3 py-2 rounded-xl border border-stone-300 font-medium">
-            <label class="flex items-center gap-1.5 font-semibold text-stone-600 cursor-pointer">
-                <input type="checkbox" value="1" onchange="limitExam(this)" class="comp-exam w-4 h-4 rounded border-stone-300 accent-maroon-900"> Exam
+            <input type="text" placeholder="Category name" maxlength="100" required class="comp-name min-w-0 w-full rounded-md border border-stone-300 px-2.5 py-2 text-[9px] font-medium text-slate-800 outline-none focus:border-maroon-800">
+            <input type="number" placeholder="Weight" min="1" max="100" step="1" oninput="calculateTotalWeight()" required class="comp-weight w-full rounded-md border border-stone-300 px-2 py-2 text-[9px] font-semibold text-slate-800 outline-none focus:border-maroon-800">
+            <label class="flex items-center gap-1.5 text-[8px] font-semibold text-stone-600 cursor-pointer">
+                <input type="checkbox" value="1" onchange="limitExam(this)" class="comp-exam h-3.5 w-3.5 rounded border-stone-300 accent-maroon-900"> Exam
             </label>
-            <input type="number" placeholder="Weight" min="1" max="100" step="1" oninput="calculateTotalWeight()" required class="comp-weight w-20 px-3 py-2 rounded-xl border border-stone-300 font-bold text-right">
-            <span class="font-bold text-stone-400">%</span>
-            <button type="button" onclick="removeRow(this)" aria-label="Remove component" class="remove-component text-rose-500 hover:text-rose-700 disabled:text-stone-300 disabled:cursor-not-allowed p-2"><i class="fa-solid fa-trash-can"></i></button>
+            <button type="button" onclick="removeRow(this)" aria-label="Remove component" class="remove-component flex h-7 w-7 items-center justify-center rounded-md text-rose-500 hover:bg-rose-50 hover:text-rose-700 disabled:text-stone-300 disabled:cursor-not-allowed"><i class="fa-solid fa-xmark"></i></button>
         </div>
     </template>
 
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/professor-dashboard.js"></script>
+    <script src="js/professor-dashboard.js?v=20261112-2"></script>
 </body>
 </html>
