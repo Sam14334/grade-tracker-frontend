@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://grade-tracker-backend-5kt3.onrender.com/api/$1"
+    }
+  ]
+}
