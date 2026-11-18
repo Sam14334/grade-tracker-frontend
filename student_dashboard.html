@@ -91,12 +91,37 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm space-y-2 print-card">
-                    <h4 class="font-bold text-slate-800 text-sm flex items-center justify-between">
-                        <span><i class="fa-solid fa-chart-column text-maroon-800 mr-2"></i>Subject GWA Analytics</span>
-                        <span class="text-[10px] text-stone-400">Live Statistics View</span>
-                    </h4>
-                    <div id="student_trend_chart" class="w-full h-52"></div>
+                <div role="region" aria-labelledby="studentAnalyticsTitle" class="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200 shadow-sm space-y-5 print-card">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h3 id="studentAnalyticsTitle" class="font-bold text-slate-800 text-base">
+                                <i class="fa-solid fa-chart-column text-maroon-800 mr-2"></i>Subject GWA Analytics
+                            </h3>
+                            <p class="mt-1 text-xs text-stone-500">Compare saved subject grades with your targets. Lower grades are better.</p>
+                        </div>
+                        <span class="text-[10px] font-semibold text-stone-400 sm:pt-1">Uses saved course data</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Grade summary">
+                        <div class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Current GWA</p>
+                            <p id="studentAnalyticsGwa" class="mt-1 text-2xl font-black text-maroon-900">--</p>
+                            <p id="studentAnalyticsGwaNote" class="mt-1 text-[11px] text-stone-500">No finalized subjects yet</p>
+                        </div>
+                        <div class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Finalized Subjects</p>
+                            <p id="studentAnalyticsCompleted" class="mt-1 text-2xl font-black text-slate-800">0 / 0</p>
+                            <p class="mt-1 text-[11px] text-stone-500">Included in server-calculated GWA</p>
+                        </div>
+                        <div class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">At or Within Target</p>
+                            <p id="studentAnalyticsOnTarget" class="mt-1 text-2xl font-black text-emerald-700">0 / 0</p>
+                            <p class="mt-1 text-[11px] text-stone-500">Among finalized subjects</p>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-stone-500" role="note">Summary totals use saved enrolled courses. In-progress courses and temporary Grade Entry rows are excluded from the GWA.</p>
+                    <div id="student_trend_chart" class="w-full min-h-[18rem]" role="img" aria-label="Chart comparing current subject grades with target grades"></div>
                 </div>
             </div>
 
@@ -176,6 +201,6 @@
 
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/student-dashboard.js"></script>
+    <script src="js/student-dashboard.js?v=20261118-4"></script>
 </body>
 </html>
