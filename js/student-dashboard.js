@@ -4,8 +4,23 @@ let dashboardData = null;
 let studentGradesData = [];
 let targetGwaGoal = null;
 let gwaGoalStorageKey = '';
+let trendChartResizeTimer = null;
+let trendChartResizeListenerAttached = false;
 
 document.addEventListener("DOMContentLoaded", bootstrapStudentDashboard);
+
+function isValidStudentAnalytics(analytics) {
+    return analytics !== null && typeof analytics === 'object' &&
+        (analytics.currentGwa === null ||
+            (typeof analytics.currentGwa === 'number' && Number.isFinite(analytics.currentGwa))) &&
+        Number.isInteger(analytics.finalizedSubjects) &&
+        Number.isInteger(analytics.totalSubjects) &&
+        Number.isInteger(analytics.atOrWithinTarget) &&
+        analytics.finalizedSubjects >= 0 &&
+        analytics.totalSubjects >= analytics.finalizedSubjects &&
+        analytics.atOrWithinTarget >= 0 &&
+        analytics.atOrWithinTarget <= analytics.finalizedSubjects;
+}
 
 async function bootstrapStudentDashboard() {
     try {
@@ -21,6 +36,9 @@ async function bootstrapStudentDashboard() {
         }
 
         const data = await API.get('/student/dashboard');
+        if (!isValidStudentAnalytics(data.analytics)) {
+            throw new Error('The dashboard returned invalid analytics data. Please reload and try again.');
+        }
         API.setCsrfToken(data.csrfToken);
         dashboardData = data;
         window.studentDashboardData = {
@@ -130,6 +148,10 @@ function showStudentAlert(message, type = 'error') {
         : 'bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-2xl text-sm';
     alert.textContent = message;
     container.appendChild(alert);
+
+    if (type === 'success') {
+        window.setTimeout(() => alert.remove(), 5000);
+    }
 }
 
 function renderEnrolledTemplates() {
@@ -202,9 +224,24 @@ function switchTab(tabId) {
 
 function scheduleTrendChart() {
     const load = () => {
-        if (!window.google?.charts) return;
+        if (!window.google?.charts) {
+            const chartElement = document.getElementById('student_trend_chart');
+            if (chartElement) {
+                chartElement.innerHTML = '<p class="flex min-h-[18rem] items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 text-center text-sm text-stone-500">Subject analytics could not load. Check your connection and refresh the page.</p>';
+            }
+            return;
+        }
         google.charts.load('current', { 'packages': ['corechart'] });
-        google.charts.setOnLoadCallback(() => renderStudentTrendChart());
+        google.charts.setOnLoadCallback(() => {
+            if (!trendChartResizeListenerAttached) {
+                window.addEventListener('resize', () => {
+                    window.clearTimeout(trendChartResizeTimer);
+                    trendChartResizeTimer = window.setTimeout(renderStudentTrendChart, 150);
+                }, { passive: true });
+                trendChartResizeListenerAttached = true;
+            }
+            renderStudentTrendChart();
+        });
     };
 
     if (window.google?.charts) {
@@ -395,17 +432,26 @@ async function handleTargetChange(itemId, select) {
         return;
     }
 
+    let response;
     try {
-        await API.put(`/enrollments/${item.enrollmentId}/target`, { targetGrade: nextTarget });
-        const course = dashboardData.courses.find(candidate => candidate.enrollmentId === item.enrollmentId);
-        if (course) course.target = nextTarget;
-        renderStudentTrendChart();
-        showStudentAlert('Target grade saved. The exam predictor will use this target.', 'success');
+        response = await API.put(`/enrollments/${item.enrollmentId}/target`, { targetGrade: nextTarget });
     } catch (error) {
         item.target = previousTarget;
         select.value = Number(previousTarget).toFixed(2);
         showStudentAlert(error.message, 'error');
+        return;
     }
+
+    const course = dashboardData.courses.find(candidate => candidate.enrollmentId === item.enrollmentId);
+    if (course) course.target = nextTarget;
+    if (!isValidStudentAnalytics(response.analytics)) {
+        showStudentAlert('Target grade was saved, but updated analytics could not be loaded. Reload the dashboard to refresh the totals.', 'error');
+        return;
+    }
+
+    dashboardData.analytics = response.analytics;
+    renderStudentTrendChart();
+    showStudentAlert('Target grade saved. The exam predictor will use this target.', 'success');
 }
 
 async function submitEnrollment(event) {
@@ -439,32 +485,80 @@ async function logoutStudent() {
 }
 
 function renderStudentTrendChart() {
-    if (!window.google?.visualization) return;
     const chartElement = document.getElementById('student_trend_chart');
     if (!chartElement) return;
+
+    renderStudentAnalyticsSummary();
+
+    if (studentGradesData.length === 0) {
+        chartElement.innerHTML = '<p class="flex min-h-[18rem] items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 text-center text-sm text-stone-500">Enroll in a course to see your subject analytics.</p>';
+        return;
+    }
+
+    if (!window.google?.visualization) {
+        chartElement.innerHTML = '<p class="flex min-h-[18rem] items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 text-center text-sm text-stone-500">Loading subject analytics…</p>';
+        return;
+    }
 
     const data = new google.visualization.DataTable();
     data.addColumn('string', 'Subject');
     data.addColumn('number', 'Current Grade');
     data.addColumn('number', 'Target Grade');
 
-    studentGradesData.forEach(item => {
+    const courses = [...studentGradesData].sort((a, b) => {
+        if (a.grade === null && b.grade !== null) return 1;
+        if (b.grade === null && a.grade !== null) return -1;
+        return (a.grade ?? 0) - (b.grade ?? 0) || a.subject.localeCompare(b.subject);
+    });
+
+    courses.forEach(item => {
         data.addRow([item.subject, item.grade, item.target]);
     });
 
     const options = {
         colors: ['#4a0415', '#3b82f6'],
+        backgroundColor: 'transparent',
+        fontName: 'Inter',
+        fontSize: 11,
+        bar: { groupWidth: '58%' },
         vAxis: {
-            title: 'PUP Grade Scale (1.00 - 5.00)',
-            direction: -1,
-            ticks: window.studentDashboardData.gradeScale
+            title: 'Grade (lower is better)',
+            direction: 1,
+            viewWindow: { min: 1, max: 5 },
+            ticks: window.studentDashboardData.gradeScale,
+            textStyle: { color: '#57534e', fontSize: 10 },
+            titleTextStyle: { color: '#57534e', fontSize: 11 },
+            gridlines: { color: '#e7e5e4' },
+            baselineColor: '#d6d3d1'
         },
-        legend: { position: 'bottom' },
-        chartArea: { width: '80%', height: '70%' }
+        hAxis: {
+            textStyle: { color: '#57534e', fontSize: 10 },
+            slantedText: courses.length > 5,
+            slantedTextAngle: 35,
+            baselineColor: '#d6d3d1'
+        },
+        legend: { position: 'top', alignment: 'end', textStyle: { color: '#44403c', fontSize: 11 } },
+        chartArea: { left: 58, top: 28, width: '82%', height: '66%' },
+        tooltip: { trigger: 'focus' }
     };
 
     const chart = new google.visualization.ColumnChart(chartElement);
     chart.draw(data, options);
+}
+
+function renderStudentAnalyticsSummary() {
+    const analytics = dashboardData.analytics;
+
+    document.getElementById('studentAnalyticsGwa').textContent = analytics.currentGwa === null
+        ? '--'
+        : analytics.currentGwa.toFixed(2);
+    document.getElementById('studentAnalyticsGwaNote').textContent = analytics.finalizedSubjects
+        ? `Weighted across ${analytics.finalizedSubjects} finalized ${analytics.finalizedSubjects === 1 ? 'subject' : 'subjects'}`
+        : 'No finalized subjects yet';
+    document.getElementById('studentAnalyticsCompleted').textContent =
+        `${analytics.finalizedSubjects} / ${analytics.totalSubjects}`;
+    document.getElementById('studentAnalyticsOnTarget').textContent =
+        `${analytics.atOrWithinTarget} / ${analytics.finalizedSubjects}`;
 }
 
 window.addSubjectRow = function () {
