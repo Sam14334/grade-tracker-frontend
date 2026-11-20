@@ -55,7 +55,7 @@
                 </div>
             </div>
 
-            <div class="pt-3 border-t border-stone-300/70 text-[10px] text-stone-500 font-medium flex items-center gap-2">
+            <div class="pt-3 border-t border-stone-300/70 text-[11px] text-stone-600 font-medium flex items-center gap-2">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 <p id="standingRefreshStatus" role="status">Loading standings...</p>
             </div>
@@ -74,40 +74,40 @@
                 <div class="flex items-center justify-between gap-4">
                     <div>
                         <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Class Standing Overview</h2>
-                        <p class="text-[10px] text-stone-500 mt-0.5">Current standings from saved scores · Updated automatically</p>
+                        <p class="text-xs text-stone-500 mt-0.5">Current standings from saved scores · Updated automatically</p>
                     </div>
-                    <span id="standingDate" class="hidden sm:inline text-[10px] font-semibold text-stone-400"></span>
+                    <span id="standingDate" class="hidden sm:inline text-xs font-semibold text-stone-400"></span>
                 </div>
 
                 <div class="bg-white px-3.5 py-3 rounded-xl border border-stone-200 shadow-sm flex flex-col sm:flex-row sm:items-center gap-2.5">
-                    <label for="courseFilter" class="text-[10px] font-bold text-stone-600 whitespace-nowrap"><i class="fa-regular fa-folder-open text-maroon-800 mr-1"></i>Course / Section:</label>
-                    <select id="courseFilter" class="w-full sm:w-auto sm:min-w-72 px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-[10px] font-bold text-slate-800">
+                    <label for="courseFilter" class="text-xs font-bold text-stone-600 whitespace-nowrap"><i class="fa-regular fa-folder-open text-maroon-800 mr-1"></i>Course / Section:</label>
+                    <select id="courseFilter" class="w-full sm:w-auto sm:min-w-72 px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-xs font-bold text-slate-800">
                         <option value="all">All Enrolled Sections (Overall Standing)</option>
                     </select>
-                    <p id="courseScopeLabel" class="sm:ml-auto text-[10px] text-stone-500">Across all your active classes</p>
+                    <p id="courseScopeLabel" class="sm:ml-auto text-xs text-stone-500">Across all your active classes</p>
                 </div>
 
                 <section class="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
                     <div class="grid grid-cols-2 xl:grid-cols-4 divide-x divide-y xl:divide-y-0 divide-stone-100">
                         <article class="px-4 py-3">
-                            <p class="text-[9px] uppercase tracking-wide font-bold text-stone-400">Top Performer</p>
+                            <p class="text-[11px] uppercase tracking-wide font-bold text-stone-500">Top Performer</p>
                             <p id="topPerformerValue" class="mt-1 text-base font-black text-slate-900">—</p>
-                            <p id="topPerformerName" class="text-[9px] text-stone-500 mt-0.5 truncate">No graded students</p>
+                            <p id="topPerformerName" class="text-[11px] text-stone-600 mt-0.5 truncate">No graded students</p>
                         </article>
                         <article class="px-4 py-3">
-                            <p class="text-[9px] uppercase tracking-wide font-bold text-stone-400">Average Standing</p>
+                            <p class="text-[11px] uppercase tracking-wide font-bold text-stone-500">Average Standing</p>
                             <p id="classAverageValue" class="mt-1 text-base font-black text-slate-900">—</p>
-                            <p class="text-[9px] text-stone-500 mt-0.5">Based on saved scores</p>
+                            <p class="text-[11px] text-stone-600 mt-0.5">Based on saved scores</p>
                         </article>
                         <article class="px-4 py-3">
-                            <p class="text-[9px] uppercase tracking-wide font-bold text-stone-400">Total Enrollments</p>
+                            <p class="text-[11px] uppercase tracking-wide font-bold text-stone-500">Total Enrollments</p>
                             <p id="enrolledCountValue" class="mt-1 text-base font-black text-slate-900">0</p>
-                            <p id="courseCountNote" class="text-[9px] text-stone-500 mt-0.5">Across 0 courses</p>
+                            <p id="courseCountNote" class="text-[11px] text-stone-600 mt-0.5">Across 0 courses</p>
                         </article>
                         <article class="px-4 py-3">
-                            <p class="text-[9px] uppercase tracking-wide font-bold text-stone-400">At Risk (&lt;75%)</p>
+                            <p class="text-[11px] uppercase tracking-wide font-bold text-stone-500">At Risk (&lt;75%)</p>
                             <p id="atRiskValue" class="mt-1 text-base font-black text-rose-700">0 Students</p>
-                            <p class="text-[9px] text-rose-600 mt-0.5">Current standing below 75%</p>
+                            <p class="text-[11px] text-rose-700 mt-0.5">Current standing below 75%</p>
                         </article>
                     </div>
                 </section>
@@ -118,9 +118,9 @@
                     <div class="flex items-center justify-between gap-3 flex-wrap">
                         <div>
                             <h3 class="text-xs font-extrabold text-slate-800"><i class="fa-solid fa-chart-simple text-maroon-800 mr-1.5"></i>Class Standing Distribution</h3>
-                            <p class="text-[9px] text-stone-500 mt-0.5">Distribution of students' current overall standings</p>
+                            <p class="text-[11px] text-stone-600 mt-0.5">Distribution of students' current overall standings</p>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 text-[9px]">
+                        <div class="flex flex-wrap items-center gap-2 text-[11px]">
                             <span class="inline-flex items-center gap-1.5 rounded-md bg-stone-50 px-2 py-1 text-stone-600 border border-stone-100"><span class="w-2 h-2 rounded-sm bg-maroon-100 border border-maroon-200"></span>Student count</span>
                             <span class="inline-flex items-center gap-1.5 rounded-md bg-stone-50 px-2 py-1 text-stone-600 border border-stone-100"><span class="w-3 h-0.5 bg-maroon-900"></span>Normal curve</span>
                         </div>
@@ -128,19 +128,19 @@
                     <div class="overflow-hidden">
                         <svg id="distributionChart" viewBox="0 0 760 220" role="img" aria-label="Distribution of students by current overall standing" class="w-full min-h-44"></svg>
                     </div>
-                    <div class="flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-2 text-[9px] text-stone-500">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-2 text-[11px] text-stone-600">
                         <span id="distributionSummary">No evaluated standings available.</span>
-                        <span class="text-stone-400">Scores are provisional when grading components remain unentered.</span>
+                        <span class="text-stone-600">Scores are provisional when grading components remain unentered.</span>
                     </div>
                 </section>
 
                 <section class="bg-white p-3 sm:p-4 rounded-xl border border-stone-200 shadow-sm space-y-3">
                     <div class="flex flex-col gap-3">
                         <div class="flex items-center justify-between gap-3 flex-wrap">
-                            <h3 class="text-xs font-extrabold text-slate-800"><i class="fa-solid fa-award text-maroon-800 mr-1.5"></i>Class Standing Leaderboard</h3>
+                            <h3 class="text-sm font-extrabold text-slate-800"><i class="fa-solid fa-award text-maroon-800 mr-1.5"></i>Class Standing Leaderboard</h3>
                             <div class="flex items-center gap-2">
-                                <span class="text-[9px] text-stone-500 hidden sm:inline">Sort:</span>
-                                <select id="rankSort" aria-label="Sort leaderboard" class="px-2 py-1.5 rounded-lg border border-stone-200 bg-white text-[9px] font-semibold text-slate-700">
+                                <span class="text-[11px] text-stone-600 hidden sm:inline">Sort:</span>
+                                <select id="rankSort" aria-label="Sort leaderboard" class="px-2 py-1.5 rounded-lg border border-stone-200 bg-white text-xs font-semibold text-slate-700">
                                     <option value="desc">Highest to lowest</option>
                                     <option value="asc">Lowest to highest</option>
                                     <option value="name">Student name</option>
@@ -149,21 +149,21 @@
                         </div>
                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" data-standing-filter="all" class="standing-filter px-3 py-1.5 rounded-full bg-maroon-900 text-white text-[9px] font-bold">All Students</button>
-                                <button type="button" data-standing-filter="top" class="standing-filter px-3 py-1.5 rounded-full bg-stone-100 text-stone-700 text-[9px] font-bold">Top Performers (&ge;90%)</button>
-                                <button type="button" data-standing-filter="risk" class="standing-filter px-3 py-1.5 rounded-full bg-stone-100 text-stone-700 text-[9px] font-bold">At Risk (&lt;75%)</button>
+                                <button type="button" data-standing-filter="all" class="standing-filter px-3 py-1.5 rounded-full bg-maroon-900 text-white text-[11px] font-bold">All Students</button>
+                                <button type="button" data-standing-filter="top" class="standing-filter px-3 py-1.5 rounded-full bg-stone-100 text-stone-700 text-[11px] font-bold">Top Performers (&ge;90%)</button>
+                                <button type="button" data-standing-filter="risk" class="standing-filter px-3 py-1.5 rounded-full bg-stone-100 text-stone-700 text-[11px] font-bold">At Risk (&lt;75%)</button>
                             </div>
-                            <input id="studentSearch" type="search" placeholder="Search student..." class="w-full md:w-52 px-3 py-2 rounded-lg border border-stone-200 text-[10px] outline-none focus:border-maroon-800">
+                            <input id="studentSearch" type="search" placeholder="Search student..." class="w-full md:w-52 px-3 py-2 rounded-lg border border-stone-200 text-xs outline-none focus:border-maroon-800">
                         </div>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-[10px] min-w-[900px]">
+                        <table class="w-full text-left border-collapse text-xs min-w-[900px]">
                             <thead id="standingTableHead"></thead>
                             <tbody id="standingTableBody" class="divide-y divide-stone-100"></tbody>
                         </table>
                     </div>
-                    <p id="standingEmptyState" class="hidden text-center text-[10px] text-stone-500 py-8">No students match these filters.</p>
-                    <p class="text-[9px] text-stone-400">Coverage is the course weight represented by components with saved scores. Ranks are provisional until all components have scores.</p>
+                    <p id="standingEmptyState" class="hidden text-center text-xs text-stone-600 py-8">No students match these filters.</p>
+                    <p class="text-[11px] text-stone-500">Coverage is the course weight represented by components with saved scores. Ranks are provisional until all components have scores.</p>
                 </section>
             </section>
 
@@ -313,10 +313,10 @@
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
                                 <h2 id="standingDialogStudent" class="truncate text-base font-extrabold"></h2>
-                                <span id="standingDialogRankBadge" class="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wide text-amber-900"></span>
+                                <span id="standingDialogRankBadge" class="rounded-full bg-amber-100 px-2 py-1 text-[11px] font-extrabold uppercase tracking-wide text-amber-900"></span>
                             </div>
-                            <p id="standingDialogEmail" class="mt-0.5 truncate text-[10px] text-maroon-200"></p>
-                            <p id="standingDialogCourse" class="mt-1 text-[10px] font-medium text-white/80"></p>
+                            <p id="standingDialogEmail" class="mt-0.5 truncate text-xs text-maroon-100"></p>
+                            <p id="standingDialogCourse" class="mt-1 text-xs font-medium text-white/90"></p>
                         </div>
                     </div>
                     <button type="button" onclick="document.getElementById('standingDialog').close()" aria-label="Close breakdown" class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
@@ -324,47 +324,46 @@
             </header>
             <div class="space-y-3 p-4 sm:p-5">
                 <section class="grid grid-cols-1 gap-3 rounded-xl border border-stone-200 bg-white p-3 sm:grid-cols-[auto_1fr_1.2fr] sm:items-center sm:p-4">
-                    <div id="standingDialogOverallRing" class="mx-auto flex h-20 w-20 items-center justify-center rounded-full sm:mx-0" role="img">
-                        <div class="flex h-[4.1rem] w-[4.1rem] flex-col items-center justify-center rounded-full bg-white">
-                            <strong id="standingDialogOverall" class="text-sm font-black text-maroon-900"></strong>
-                            <span class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Overall</span>
+                    <div id="standingDialogOverallRing" class="mx-auto flex h-24 w-24 items-center justify-center rounded-full sm:mx-0" role="img">
+                        <div class="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-white">
+                            <strong id="standingDialogOverall" class="text-lg font-black text-maroon-900"></strong>
+                            <span class="text-[11px] font-bold uppercase tracking-wide text-stone-500">Overall</span>
                         </div>
                     </div>
                     <div class="text-center sm:text-left">
-                        <p class="text-[8px] font-extrabold text-stone-500"><i class="fa-solid fa-arrow-trend-up mr-1 text-emerald-600"></i>Highest Cohort Benchmark</p>
-                        <p id="standingDialogBenchmark" class="mt-1 text-[11px] font-extrabold text-slate-800"></p>
-                        <p id="standingDialogSummary" class="mt-1 text-[9px] leading-relaxed text-stone-600"></p>
+                        <p class="text-[11px] font-extrabold text-stone-600"><i class="fa-solid fa-arrow-trend-up mr-1 text-emerald-600"></i>Highest Cohort Benchmark</p>
+                        <p id="standingDialogBenchmark" class="mt-1 text-xs font-extrabold text-slate-800"></p>
+                        <p id="standingDialogSummary" class="mt-1 text-xs leading-relaxed text-stone-600"></p>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <article class="rounded-lg border border-stone-100 bg-stone-50 p-2 text-center">
-                            <p class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Course Rank</p>
-                            <p id="standingDialogRank" class="mt-1 text-[10px] font-extrabold text-maroon-900"></p>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-stone-500">Course Rank</p>
+                            <p id="standingDialogRank" class="mt-1 text-xs font-extrabold text-maroon-900"></p>
                         </article>
                         <article class="rounded-lg border border-stone-100 bg-stone-50 p-2 text-center">
-                            <p class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Enrollment</p>
-                            <p id="standingDialogEnrollment" class="mt-1 text-[10px] font-extrabold text-slate-800"></p>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-stone-500">Enrollment</p>
+                            <p id="standingDialogEnrollment" class="mt-1 text-xs font-extrabold text-slate-800"></p>
                         </article>
                         <article class="rounded-lg border border-stone-100 bg-stone-50 p-2 text-center">
-                            <p class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Weight Covered</p>
-                            <p id="standingDialogCoverage" class="mt-1 text-[10px] font-extrabold text-slate-800"></p>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-stone-500">Weight Covered</p>
+                            <p id="standingDialogCoverage" class="mt-1 text-xs font-extrabold text-slate-800"></p>
                         </article>
                         <article class="rounded-lg border border-stone-100 bg-stone-50 p-2 text-center">
-                            <p class="text-[7px] font-bold uppercase tracking-wide text-stone-400">Status</p>
-                            <p id="standingDialogStatus" class="mt-1 text-[10px] font-extrabold text-slate-800"></p>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-stone-500">Status</p>
+                            <p id="standingDialogStatus" class="mt-1 text-xs font-extrabold text-slate-800"></p>
                         </article>
                     </div>
                 </section>
                 <section class="rounded-xl border border-stone-200 bg-white p-3 sm:p-4">
                     <div class="mb-3 flex items-center justify-between gap-2 border-b border-stone-100 pb-2">
-                        <h3 class="text-[10px] font-extrabold text-slate-800"><i class="fa-solid fa-chart-column mr-1 text-maroon-800"></i>Component Evaluation Breakdown</h3>
-                        <span class="text-[8px] text-stone-400">Circular metrics</span>
+                        <h3 class="text-sm font-extrabold text-slate-800"><i class="fa-solid fa-chart-column mr-1 text-maroon-800"></i>Component Evaluation Breakdown</h3>
                     </div>
                     <div id="standingDialogBreakdown" class="grid grid-cols-2 gap-2 sm:grid-cols-3"></div>
                 </section>
-                <p class="px-1 text-[8px] leading-relaxed text-stone-400">Component percentages are calculated from saved assessment scores. Each component's course weight is half its configured period weight.</p>
+                <p class="px-1 text-[11px] leading-relaxed text-stone-500">Component percentages are calculated from saved assessment scores. Each component's course weight is half its configured period weight.</p>
             </div>
             <footer class="flex justify-end border-t border-stone-200 bg-[#f7f3eb] px-4 py-3">
-                <button type="button" onclick="document.getElementById('standingDialog').close()" class="rounded-lg bg-maroon-900 px-4 py-2 text-[9px] font-bold text-white hover:bg-maroon-800">Close Breakdown</button>
+                <button type="button" onclick="document.getElementById('standingDialog').close()" class="rounded-lg bg-maroon-900 px-4 py-2 text-xs font-bold text-white hover:bg-maroon-800">Close Breakdown</button>
             </footer>
         </div>
     </dialog>
@@ -383,6 +382,6 @@
 
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/professor-dashboard.js?v=20261112-2"></script>
+    <script src="js/professor-dashboard.js?v=20261114-1"></script>
 </body>
 </html>

@@ -515,8 +515,8 @@ function initializeClassStanding() {
             activeStandingFilter = button.dataset.standingFilter;
             document.querySelectorAll('.standing-filter').forEach(filterButton => {
                 filterButton.className = filterButton === button
-                    ? 'standing-filter px-3 py-1.5 rounded-full bg-maroon-900 text-white text-[9px] font-bold'
-                    : 'standing-filter px-3 py-1.5 rounded-full bg-stone-100 text-stone-700 text-[9px] font-bold';
+                    ? 'standing-filter px-3 py-1.5 rounded-full bg-maroon-900 text-white text-[11px] font-bold'
+                    : 'standing-filter px-3 py-1.5 rounded-full bg-stone-100 text-stone-700 text-[11px] font-bold';
             });
             renderClassStanding();
         });
@@ -670,8 +670,8 @@ function renderDistribution(rows, average) {
         const y = baseline - height;
         const fill = index < 3 ? '#f5e3e7' : index < 6 ? '#dff3e8' : '#fff0c7';
         return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(binWidth * 0.8).toFixed(1)}" height="${height.toFixed(1)}" rx="4" fill="${fill}"/>
-            ${counts[index] ? `<text x="${(x + binWidth * 0.4).toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" fill="#78716c" font-size="9">${counts[index]}</text>` : ''}
-            <text x="${(left + index * binWidth + binWidth / 2).toFixed(1)}" y="205" text-anchor="middle" fill="#78716c" font-size="8">${bin.label}</text>`;
+            ${counts[index] ? `<text x="${(x + binWidth * 0.4).toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" fill="#78716c" font-size="11">${counts[index]}</text>` : ''}
+            <text x="${(left + index * binWidth + binWidth / 2).toFixed(1)}" y="205" text-anchor="middle" fill="#57534e" font-size="10">${bin.label}</text>`;
     }).join('');
     const gridLines = [0, Math.ceil(maxCount / 2), maxCount].filter((value, index, values) => values.indexOf(value) === index).map(value => {
         const y = baseline - value / maxCount * plotHeight * 0.72;
@@ -681,7 +681,7 @@ function renderDistribution(rows, average) {
     chart.innerHTML = `${gridLines}${bars}
         ${averageX === null ? '' : `<line x1="${averageX.toFixed(1)}" y1="${top}" x2="${averageX.toFixed(1)}" y2="${baseline}" stroke="#c58b32" stroke-width="1" stroke-dasharray="3 3"/>
             <rect x="${Math.max(left, Math.min(width - 112, averageX - 40)).toFixed(1)}" y="3" width="80" height="17" rx="5" fill="#4a0415"/>
-            <text x="${Math.max(left + 40, Math.min(width - 72, averageX)).toFixed(1)}" y="14.5" text-anchor="middle" fill="white" font-size="9" font-weight="700">Mean ${formatPercentage(average)}</text>`}
+            <text x="${Math.max(left + 40, Math.min(width - 72, averageX)).toFixed(1)}" y="14.5" text-anchor="middle" fill="white" font-size="10" font-weight="700">Mean ${formatPercentage(average)}</text>`}
         ${curvePoints ? `<polyline points="${curvePoints}" fill="none" stroke="#6b0820" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
         <line x1="${left}" y1="${baseline}" x2="${width - right}" y2="${baseline}" stroke="#e7e5e4" stroke-width="1"/>`;
     summary.textContent = rows.length
@@ -694,10 +694,10 @@ function renderStandingTable(courses, rows, allRows) {
     const tableBody = document.getElementById('standingTableBody');
     const showCourse = document.getElementById('courseFilter').value === 'all';
     const components = courses.length === 1 ? courses[0].components : [];
-    tableHead.innerHTML = `<tr class="bg-stone-50 text-[8px] uppercase tracking-wide text-stone-500 border-b border-stone-200">
-        <th class="p-2.5">Rank</th><th class="p-2.5">Student</th>${showCourse ? '<th class="p-2.5">Course</th>' : ''}
-        <th class="p-2.5">Overall Grade</th>${components.map(component => `<th class="p-2.5">${periodLabels[component.period]} · ${escapeHtml(component.name)} (${component.weight}%)</th>`).join('')}
-        <th class="p-2.5">Status / Coverage</th><th class="p-2.5 text-right">Action</th></tr>`;
+    tableHead.innerHTML = `<tr class="bg-stone-50 text-[11px] uppercase tracking-wide text-stone-600 border-b border-stone-200">
+        <th class="p-3">Rank</th><th class="p-3">Student</th>${showCourse ? '<th class="p-3">Course</th>' : ''}
+        <th class="p-3">Overall Grade</th>${components.map(component => `<th class="p-3">${periodLabels[component.period]} · ${escapeHtml(component.name)} (${component.weight}%)</th>`).join('')}
+        <th class="p-3">Status / Coverage</th><th class="p-3 text-right">Action</th></tr>`;
     const sort = document.getElementById('rankSort').value;
     const rankByEnrollment = new Map();
     courses.forEach(course => {
@@ -721,18 +721,18 @@ function renderStandingTable(courses, rows, allRows) {
         const status = standingStatus(row);
         const componentCells = components.map(component => {
             const item = row.components.find(result => result.id === component.id);
-            return `<td class="p-2.5 text-stone-600">${formatPercentage(item?.percentage ?? null)}</td>`;
+            return `<td class="p-3 text-stone-700">${formatPercentage(item?.percentage ?? null)}</td>`;
         }).join('');
         const current = formatPercentage(row.percentage);
         const progressText = `${row.gradedWeight}% course weight covered`;
         return `<tr class="hover:bg-stone-50/80">
-            <td class="p-2.5 font-bold text-stone-500">${rankByEnrollment.has(row.enrollmentId) ? `#${rankByEnrollment.get(row.enrollmentId)}` : '—'}</td>
-            <td class="p-2.5"><p class="font-bold text-slate-800">${escapeHtml(row.student)}</p><p class="text-[8px] text-stone-400 mt-0.5">${escapeHtml(row.email)}</p></td>
-            ${showCourse ? `<td class="p-2.5 font-semibold text-stone-600">${escapeHtml(row.course.code)}</td>` : ''}
-            <td class="p-2.5"><span class="font-black text-slate-900">${current}</span>${row.percentage !== null ? `<div class="mt-1 h-1 w-20 rounded-full bg-stone-100"><div class="h-1 rounded-full ${row.percentage < 75 ? 'bg-rose-500' : 'bg-maroon-900'}" style="width:${Math.max(0, Math.min(100, row.percentage))}%"></div></div>` : ''}</td>
+            <td class="p-3 font-bold text-stone-600">${rankByEnrollment.has(row.enrollmentId) ? `#${rankByEnrollment.get(row.enrollmentId)}` : '—'}</td>
+            <td class="p-3"><p class="font-bold text-slate-800">${escapeHtml(row.student)}</p><p class="mt-1 text-[11px] text-stone-600">${escapeHtml(row.email)}</p></td>
+            ${showCourse ? `<td class="p-3 font-semibold text-stone-700">${escapeHtml(row.course.code)}</td>` : ''}
+            <td class="p-3"><span class="font-black text-slate-900">${current}</span>${row.percentage !== null ? `<div class="mt-1.5 h-1.5 w-20 rounded-full bg-stone-100"><div class="h-1.5 rounded-full ${row.percentage < 75 ? 'bg-rose-500' : 'bg-maroon-900'}" style="width:${Math.max(0, Math.min(100, row.percentage))}%"></div></div>` : ''}</td>
             ${componentCells}
-            <td class="p-2.5"><span class="inline-flex rounded-full px-2 py-1 text-[8px] font-bold ${status.style}">${status.label}</span><p class="text-[8px] text-stone-400 mt-1">${progressText}</p></td>
-            <td class="p-2.5 text-right"><button type="button" data-enrollment-id="${row.enrollmentId}" class="standing-detail-button rounded-md border border-stone-300 px-2.5 py-1.5 text-[8px] font-bold text-slate-700 hover:bg-stone-100">View Breakdown</button></td>
+            <td class="p-3"><span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${status.style}">${status.label}</span><p class="mt-1 text-[11px] text-stone-600">${progressText}</p></td>
+            <td class="p-3 text-right"><button type="button" data-enrollment-id="${row.enrollmentId}" class="standing-detail-button rounded-md border border-stone-300 px-2.5 py-2 text-[11px] font-bold text-slate-700 hover:bg-stone-100">View Breakdown</button></td>
         </tr>`;
     }).join('');
     tableBody.querySelectorAll('.standing-detail-button').forEach(button => {
@@ -742,8 +742,10 @@ function renderStandingTable(courses, rows, allRows) {
 }
 
 function showStandingDetails(enrollmentId) {
-    const course = standingCourses.find(item => item.students.some(student => student.enrollmentId === enrollmentId));
-    const student = course?.students.find(item => item.enrollmentId === enrollmentId);
+    const course = standingCourses.find(item =>
+        item.students.some(student => String(student.enrollmentId) === String(enrollmentId))
+    );
+    const student = course?.students.find(item => String(item.enrollmentId) === String(enrollmentId));
     const dialog = document.getElementById('standingDialog');
     if (!course || !student) { dialog.close(); return; }
     const rankedStudents = [...course.students]
@@ -787,7 +789,7 @@ function showStandingDetails(enrollmentId) {
     document.getElementById('standingDialogCoverage').textContent = `${Number(student.gradedWeight).toFixed(1)}%`;
     const statusElement = document.getElementById('standingDialogStatus');
     statusElement.textContent = scoreStatus.label;
-    statusElement.className = `mt-1 text-[9px] font-extrabold ${
+    statusElement.className = `mt-1 text-xs font-extrabold ${
         scoreStatus.style.includes('rose') ? 'text-rose-700'
             : scoreStatus.style.includes('emerald') ? 'text-emerald-700'
                 : scoreStatus.style.includes('blue') ? 'text-blue-700'
@@ -800,18 +802,20 @@ function showStandingDetails(enrollmentId) {
             : Math.max(0, Math.min(100, Number(component.percentage)));
         const effectiveWeight = Number(component.weight) / 2;
         const assessments = component.assessments.length
-            ? component.assessments.map(assessment => `<li class="flex justify-between gap-2 py-1 text-[8px] text-stone-500"><span class="truncate">${escapeHtml(assessment.title)}</span><span class="shrink-0 font-semibold">${Number(assessment.score)} / ${Number(assessment.max)}</span></li>`).join('')
-            : '<li class="py-1 text-[8px] italic text-stone-400">No scores entered</li>';
-        const ringColor = percentage === null ? '#d6d3d1' : percentage >= 90 ? '#15803d' : percentage >= 75 ? '#1d4ed8' : '#c2410c';
-        return `<article class="rounded-lg border border-stone-100 bg-[#fbfaf8] p-2.5 text-center">
-            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full" style="background:conic-gradient(${ringColor} ${percentage ?? 0}%, #e7e5e4 ${percentage ?? 0}% 100%)" role="img" aria-label="${escapeHtml(component.name)}: ${formatPercentage(percentage)}">
-                <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[9px] font-black text-slate-800">${formatPercentage(percentage)}</div>
+            ? component.assessments.map(assessment => `<li class="flex justify-between gap-2 py-1 text-[11px] text-stone-600"><span class="truncate">${escapeHtml(assessment.title)}</span><span class="shrink-0 font-semibold">${Number(assessment.score)} / ${Number(assessment.max)}</span></li>`).join('')
+            : '<li class="py-1 text-[11px] italic text-stone-500">No scores entered</li>';
+        return `<article class="rounded-lg border border-stone-100 bg-[#fbfaf8] p-3">
+            <div class="flex items-center justify-between gap-2">
+                <h4 class="line-clamp-2 text-xs font-extrabold text-slate-800">${escapeHtml(component.name)}</h4>
+                <strong class="shrink-0 text-base font-black text-slate-900">${formatPercentage(percentage)}</strong>
             </div>
-            <h4 class="mt-2 line-clamp-2 min-h-6 text-[8px] font-extrabold text-slate-800">${escapeHtml(component.name)}</h4>
-            <p class="text-[7px] text-stone-500">${periodLabels[component.period]} · ${effectiveWeight}% course weight</p>
-            <p class="mt-1 text-[7px] font-semibold ${percentage === null ? 'text-stone-400' : 'text-emerald-700'}">${percentage === null ? 'Pending scores' : `${Number(component.score)} / ${Number(component.max)} points`}</p>
-            <details class="mt-2 border-t border-stone-200 pt-1.5 text-left">
-                <summary class="cursor-pointer text-[7px] font-bold text-stone-500">Assessment scores</summary>
+            <p class="mt-1 text-[11px] text-stone-600">${periodLabels[component.period]} · ${effectiveWeight}% course weight</p>
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-stone-200" role="img" aria-label="${escapeHtml(component.name)}: ${formatPercentage(percentage)}">
+                <div class="h-full rounded-full ${percentage === null ? 'bg-stone-400' : percentage >= 90 ? 'bg-emerald-600' : percentage >= 75 ? 'bg-blue-600' : 'bg-amber-600'}" style="width:${percentage ?? 0}%"></div>
+            </div>
+            <p class="mt-1 text-[11px] font-semibold ${percentage === null ? 'text-stone-500' : 'text-emerald-700'}">${percentage === null ? 'Pending scores' : `${Number(component.score)} / ${Number(component.max)} points`}</p>
+            <details class="mt-2 border-t border-stone-200 pt-2 text-left">
+                <summary class="cursor-pointer text-[11px] font-bold text-stone-600">Assessment scores</summary>
                 <ul class="mt-1">${assessments}</ul>
             </details>
         </article>`;
