@@ -91,6 +91,21 @@
                     </div>
                 </div>
 
+                <div class="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200 shadow-sm space-y-3 print-card">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">
+                                <i class="fa-solid fa-stethoscope text-maroon-800 mr-2"></i>Rule-Based Diagnostic Insights
+                            </h3>
+                            <p class="mt-1 text-xs text-stone-500">Client-side analysis of your saved scores and this course&rsquo;s grading weights.</p>
+                        </div>
+                        <span class="text-[10px] font-semibold text-stone-400 sm:pt-1">Updates live while you edit scores</span>
+                    </div>
+                    <div id="studentDiagnostics" aria-live="polite">
+                        <p class="rounded-2xl border border-stone-200 bg-stone-50 p-3 text-[11px] font-semibold text-stone-600">Diagnostics will appear once you have saved assessment scores.</p>
+                    </div>
+                </div>
+
                 <div role="region" aria-labelledby="studentAnalyticsTitle" class="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200 shadow-sm space-y-5 print-card">
                     <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                         <div>
@@ -201,6 +216,7 @@
 
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/student-dashboard.js?v=20261118-4"></script>
+    <script src="js/student-dashboard.js?v=20261121-1"></script>
+    <script type="module" src="js/rba/student-dashboard.js?v=20261121-1"></script>
 </body>
 </html>

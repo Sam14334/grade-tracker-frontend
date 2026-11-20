@@ -3,6 +3,7 @@ const nextComponentIndex = { midterms: 0, finals: 0 };
 
 let enrolledTemplates = [];
 let standingCourses = [];
+let standingGradeScale = [];
 let activeStandingFilter = 'all';
 let refreshingStandings = false;
 let editingTemplateId = 0;
@@ -41,6 +42,7 @@ async function bootstrapProfessorDashboard() {
 
         const standingsData = await API.get('/professor/standings');
         standingCourses = standingsData.courses || [];
+        standingGradeScale = standingsData.gradeScalePairs || standingsData.gradeScale || [];
 
         let editData = null;
         if (editingTemplateId > 0) {
@@ -288,7 +290,36 @@ function calculateTotalWeight() {
         ? '100% / 100% (Valid)'
         : `${completePeriods} / 2 periods complete`;
     status.className = `font-bold ${valid ? 'text-emerald-700' : 'text-rose-700'}`;
+    emitTemplateDraft();
     return valid;
+}
+
+function collectDraftComponents() {
+    const components = { midterms: [], finals: [] };
+    document.querySelectorAll('.period-components').forEach(section => {
+        const period = section.dataset.period;
+        section.querySelectorAll('.component-row').forEach(row => {
+            components[period].push({
+                id: row.querySelector('.comp-id').value,
+                name: row.querySelector('.comp-name').value,
+                weight: row.querySelector('.comp-weight').value,
+                is_exam: row.querySelector('.comp-exam').checked ? '1' : '0'
+            });
+        });
+    });
+    return components;
+}
+
+function emitTemplateDraft() {
+    document.dispatchEvent(new CustomEvent('rba:template-draft', {
+        detail: {
+            page: 'professor-draft',
+            templateId: editingTemplateId,
+            draftComponents: collectDraftComponents(),
+            courses: standingCourses,
+            gradeScale: standingGradeScale
+        }
+    }));
 }
 
 function validatePublishForm(event) {
@@ -313,19 +344,7 @@ function validatePublishForm(event) {
 }
 
 async function submitTemplateForm(button) {
-    const components = { midterms: [], finals: [] };
-
-    document.querySelectorAll('.period-components').forEach(section => {
-        const period = section.dataset.period;
-        section.querySelectorAll('.component-row').forEach(row => {
-            components[period].push({
-                id: row.querySelector('.comp-id').value,
-                name: row.querySelector('.comp-name').value,
-                weight: row.querySelector('.comp-weight').value,
-                is_exam: row.querySelector('.comp-exam').checked ? '1' : '0'
-            });
-        });
-    });
+    const components = collectDraftComponents();
 
     const payload = {
         courseCode: document.getElementById('courseCodeInput').value,
@@ -373,6 +392,7 @@ async function submitTemplateForm(button) {
             renderTemplatesList();
             renderActiveClassCode(savedTemplate);
             renderClassStanding();
+            emitCohortContext();
 
             const generatedCode = savedTemplate.classCode || data.classCode;
             window.history.replaceState({}, document.title, `${window.location.pathname}#templates`);
@@ -507,7 +527,10 @@ async function removeTemplate(id) {
 function initializeClassStanding() {
     const courseFilter = document.getElementById('courseFilter');
     updateCourseOptions();
-    courseFilter.addEventListener('change', renderClassStanding);
+    courseFilter.addEventListener('change', () => {
+        renderClassStanding();
+        emitCohortContext();
+    });
     document.getElementById('rankSort').addEventListener('change', renderClassStanding);
     document.getElementById('studentSearch').addEventListener('input', renderClassStanding);
     document.querySelectorAll('.standing-filter').forEach(button => {
@@ -523,6 +546,7 @@ function initializeClassStanding() {
     });
     renderClassStanding();
     document.getElementById('standingRefreshStatus').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+    emitCohortContext();
 }
 
 function updateCourseOptions() {
@@ -548,8 +572,10 @@ async function refreshStandings() {
         if (!Array.isArray(data.courses)) throw new Error('Invalid standings response.');
 
         standingCourses = data.courses;
+        standingGradeScale = data.gradeScalePairs || data.gradeScale || standingGradeScale;
         updateCourseOptions();
         renderClassStanding();
+        emitCohortContext();
 
         const dialog = document.getElementById('standingDialog');
         if (dialog.open) showStandingDetails(Number(dialog.dataset.enrollmentId));
@@ -569,6 +595,16 @@ async function refreshStandings() {
 function selectedCourses() {
     const selectedId = document.getElementById('courseFilter').value;
     return selectedId === 'all' ? standingCourses : standingCourses.filter(course => String(course.id) === selectedId);
+}
+
+function emitCohortContext() {
+    const detail = {
+        page: 'professor-dashboard',
+        courses: selectedCourses(),
+        gradeScale: standingGradeScale
+    };
+    window.__rbaProfessorContext = detail;
+    document.dispatchEvent(new CustomEvent('rba:context', { detail }));
 }
 
 function getVisibleStandings() {

@@ -35,6 +35,7 @@ async function bootstrapCourseScores() {
         renderCourse(data);
         initScoreForm();
         if (data.components.length > 0) updateScorePreview();
+        emitRbaContext();
 
         if (new URLSearchParams(window.location.search).get('saved')) {
             showCourseAlert('Scores saved. Your calculator now reflects these scores.', 'success');
@@ -196,6 +197,7 @@ function markScoresChanged() {
     scoresChanged = true;
     document.getElementById('scoreSaveStatus').textContent = 'Unsaved changes';
     updateScorePreview();
+    emitRbaContext();
 }
 
 function collectEntries() {
@@ -213,6 +215,33 @@ function collectEntries() {
     });
     return entries;
 }
+
+function getRbaScoreSnapshot() {
+    return {
+        page: 'course-scores',
+        courseCode: document.getElementById('courseCodeTitle')?.textContent?.trim() || 'Course',
+        target: window.courseTargetGrade ?? null,
+        gradeScale: window.courseGradeScale ?? [],
+        enrollmentId,
+        components: [...document.querySelectorAll('.score-component')].map(component => ({
+            id: component.dataset.componentId,
+            period: component.dataset.period,
+            name: component.querySelector('h2')?.textContent?.trim() || 'Category',
+            weight: Number(component.dataset.weight),
+            is_exam: component.dataset.isExam === '1'
+        })),
+        entries: collectEntries()
+    };
+}
+
+function emitRbaContext() {
+    if (typeof window.getRbaScoreSnapshot !== 'function') return;
+    document.dispatchEvent(new CustomEvent('rba:context', {
+        detail: window.getRbaScoreSnapshot()
+    }));
+}
+
+window.getRbaScoreSnapshot = getRbaScoreSnapshot;
 
 async function saveScores() {
     const button = document.getElementById('saveScoresButton');
