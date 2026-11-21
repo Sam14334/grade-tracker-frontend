@@ -46,6 +46,7 @@ async function bootstrapStudentDashboard() {
             csrfToken: data.csrfToken,
             targetGrades: data.targetGrades,
             gradeScale: data.gradeScale,
+            gradeScalePairs: data.gradeScalePairs,
             enrolledCourses: data.courses
         };
 
@@ -135,6 +136,20 @@ function initStudentDashboard(data) {
     if (tabHint) {
         window.history.replaceState({}, document.title, window.location.pathname + '#' + tabHint);
     }
+
+    emitRbaContext();
+}
+
+function emitRbaContext() {
+    if (!dashboardData) return;
+
+    const detail = {
+        page: 'student-dashboard',
+        courses: dashboardData.courses,
+        gradeScale: dashboardData.gradeScalePairs ?? dashboardData.gradeScale ?? []
+    };
+    window.__rbaStudentContext = detail;
+    document.dispatchEvent(new CustomEvent('rba:context', { detail }));
 }
 
 function showStudentAlert(message, type = 'error') {
@@ -451,6 +466,7 @@ async function handleTargetChange(itemId, select) {
 
     dashboardData.analytics = response.analytics;
     renderStudentTrendChart();
+    emitRbaContext();
     showStudentAlert('Target grade saved. The exam predictor will use this target.', 'success');
 }
 
@@ -595,6 +611,7 @@ window.removeSubjectRow = async function (id) {
             window.studentDashboardData.enrolledCourses = dashboardData.courses;
             renderEnrolledTemplates();
             recalculateGradesAndStats(false);
+            emitRbaContext();
             showStudentAlert('Course removed from your enrollments.', 'success');
         } catch (error) {
             showStudentAlert(error.message, 'error');
