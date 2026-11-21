@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBA Engine Tests</title>
+    <style>
+        body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 2rem auto; max-width: 60rem; padding: 0 1rem; color: #1c1917; background: #faf9f7; }
+        h1 { font-size: 1.35rem; margin-bottom: .25rem; }
+        p.lead { color: #57534e; font-size: .85rem; margin-top: 0; }
+        #summary { font-weight: 700; margin: 1rem 0; }
+        .pass { color: #047857; }
+        .fail { color: #be123c; }
+        ol { padding-left: 1.25rem; }
+        li { margin: .45rem 0; font-size: .85rem; line-height: 1.45; }
+        code { background: #f5f5f4; padding: .1rem .3rem; border-radius: .25rem; font-size: .8rem; }
+        .detail { display: block; color: #78716c; font-size: .78rem; margin-top: .15rem; }
+    </style>
+</head>
+<body>
+    <h1>Rule-based analysis engine tests</h1>
+    <p class="lead">Pure ES-module tests. No server, DOM, or network access is used by the engine.</p>
+    <p id="summary">Running…</p>
+    <ol id="results"></ol>
+
+    <script type="module">
+        import {
+            analyzeStudentCourse,
+            analyzeStudentOverview,
+            analyzeCohort,
+            previewDraftWeights,
+            buildCourseStats,
+            passingPercentage,
+            percentageToGrade,
+        } from '../js/rba/engine.js';
+        import {
+            GRADE_SCALE,
+            sampleComponents,
+            sampleEntries,
+            dashboardCourse,
+            cohortCourse,
+            draftComponents,
+            toComponentResults,
+        } from './rba-fixtures.js';
+
+        const SEVERITY_RANK = { critical: 0, warning: 1, info: 2, positive: 3, neutral: 4 };
+        const results = [];
+        const list = document.getElementById('results');
+
+        function assert(condition, message) {
+            if (!condition) throw new Error(message);
+        }
+
+        function assertEqual(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(`${message} (expected ${expected}, got ${actual})`);
+            }
+        }
+
+        function test(name, run) {
+            try {
+                run();
+                results.push({ name, ok: true });
+                const item = document.createElement('li');
+                item.className = 'pass';
+                item.textContent = `PASS — ${name}`;
+                list.appendChild(item);
+            } catch (error) {
+                results.push({ name, ok: false, error });
+                const item = document.createElement('li');
+                item.className = 'fail';
+                item.textContent = `FAIL — ${name}`;
+                const detail = document.createElement('span');
+                detail.className = 'detail';
+                detail.textContent = error.message;
+                item.appendChild(detail);
+                list.appendChild(item);
+                console.error(name, error);
+            }
+        }
+
+        test('grade scale resolves passing at 75% and 81% as 2.50', () => {
+            assertEqual(passingPercentage(GRADE_SCALE), 75, 'passing percentage');
+            assertEqual(percentageToGrade(81, GRADE_SCALE), 2.5, '81% grade');
+            assertEqual(percentageToGrade(70, GRADE_SCALE), 5.0, 'failing grade');
+        });
+
+        test('88% exam + 68% quizzes flags coursework, not the exam', () => {
+            const report = analyzeStudentCourse({
+                courseCode: 'CS-301',
+                components: sampleComponents(),
+                entries: sampleEntries(),
+                gradeScale: GRADE_SCALE,
+            });
+            assertEqual(report.status, 'warning', 'report status');
+            assert(report.summary.includes('81.0%'), 'summary includes course percentage');
+            assert(report.findings.some((item) => item.ruleId === 'S-05'), 'S-05 missing');
+            const bottleneck = report.findings.find((item) => item.ruleId === 'S-04');
+            assert(bottleneck, 'S-04 missing');
+            assert(bottleneck.title.includes('Quizzes'), 'bottleneck should name Quizzes');
+            assert(!bottleneck.title.includes('Exam'), 'bottleneck should not name the exam');
+            assertEqual(
+                report.findings.filter((item) => item.ruleId === 'S-04').length,
+                1,
+                'duplicate category bottleneck',
+            );
+        });
+
+        test('insufficient data returns the neutral prompt', () => {
+            const report = analyzeStudentCourse({
+                courseCode: 'CS-301',
+                components: [
+                    { id: 'midterms_1', period: 'midterms', name: 'Quizzes', weight: 100, is_exam: false },
+                    { id: 'finals_2', period: 'finals', name: 'Exam', weight: 100, is_exam: true },
+                ],
+                entries: { midterms_1: [{ assessment_title: 'Quiz 1', raw_score: '80', total_items: '100' }], finals_2: [] },
+                gradeScale: GRADE_SCALE,
+            });
+            assertEqual(report.status, 'neutral', 'status');
+            assert(report.findings.some((item) => item.ruleId === 'S-01'), 'S-01 missing');
+        });
+
+        test('full-coverage 70% course is critical', () => {
+            const report = analyzeStudentCourse({
+                courseCode: 'CS-301',
+                components: [
+                    { id: 'midterms_1', period: 'midterms', name: 'Quizzes', weight: 100, is_exam: false },
+                    { id: 'finals_2', period: 'finals', name: 'Exam', weight: 100, is_exam: true },
+                ],
+                entries: {
+                    midterms_1: [{ assessment_title: 'Quiz 1', raw_score: '70', total_items: '100' }],
+                    finals_2: [{ assessment_title: 'Final Exam', raw_score: '70', total_items: '100' }],
+                },
+                gradeScale: GRADE_SCALE,
+            });
+            assertEqual(report.status, 'critical', 'status');
+            assert(report.findings.some((item) => item.ruleId === 'S-02'), 'S-02 missing');
+        });
+
+        test('invalid score rows are counted, not silently accepted', () => {
+            const stats = buildCourseStats({
+                components: [{ id: 'midterms_1', period: 'midterms', name: 'Quizzes', weight: 100, is_exam: false }],
+                entries: {
+                    midterms_1: [
+                        { assessment_title: 'Bad', raw_score: '120', total_items: '100' },
+                        { assessment_title: 'Blank', raw_score: '', total_items: '' },
+                    ],
+                },
+            });
+            assertEqual(stats.invalidRows, 1, 'invalid row count');
+            assertEqual(stats.scoredComponents, 0, 'scored component count');
+        });
+
+        test('invalid period weights pause the diagnosis', () => {
+            const components = sampleComponents();
+            components[0] = { ...components[0], weight: 60 };
+            components[1] = { ...components[1], weight: 30 };
+            const report = analyzeStudentCourse({
+                courseCode: 'CS-301',
+                components,
+                entries: sampleEntries(),
+                gradeScale: GRADE_SCALE,
+            });
+            assertEqual(report.status, 'warning', 'status');
+            assert(report.findings.some((item) => item.ruleId === 'S-00'), 'S-00 missing');
+        });
+
+        test('target comparison switches between info and positive', () => {
+            const below = analyzeStudentCourse({
+                courseCode: 'CS-301',
+                components: sampleComponents(),
+                entries: sampleEntries(),
+                gradeScale: GRADE_SCALE,
+                target: 2.0,
+            });
+            const belowTarget = below.findings.find((item) => item.ruleId === 'S-07');
+            assert(belowTarget, 'S-07 missing for unmet target');
+            assertEqual(belowTarget.severity, 'info', 'unmet target severity');
+
+            const met = analyzeStudentCourse({
+                courseCode: 'CS-301',
+                components: sampleComponents(),
+                entries: sampleEntries(),
+                gradeScale: GRADE_SCALE,
+                target: 3.0,
+            });
+            const metTarget = met.findings.find((item) => item.ruleId === 'S-07');
+            assert(metTarget, 'S-07 missing for met target');
+            assertEqual(metTarget.severity, 'positive', 'met target severity');
+        });
+
+        test('cohort below three students stays neutral', () => {
+            const report = analyzeCohort({
+                courses: [cohortCourse({ studentCount: 2, weakCount: 1 })],
+                gradeScale: GRADE_SCALE,
+            });
+            assertEqual(report.status, 'neutral', 'status');
+            assert(report.findings.some((item) => item.ruleId === 'C-01'), 'C-01 missing');
+        });
+
+        test('ten-student cohort flags a low pass rate without PII', () => {
+            const report = analyzeCohort({
+                courses: [cohortCourse()],
+                gradeScale: GRADE_SCALE,
+            });
+            assertEqual(report.status, 'critical', 'status');
+            assert(report.findings.some((item) => item.ruleId === 'C-04'), 'C-04 missing');
+            assertEqual(
+                report.findings.filter((item) => item.ruleId === 'C-03').length,
+                1,
+                'duplicate category finding',
+            );
+            const serialized = JSON.stringify(report);
+            assert(!serialized.includes('Student 1'), 'student name leaked');
+            assert(!serialized.includes('student1@example.com'), 'student email leaked');
+            assert(!serialized.includes('enrollmentId'), 'enrollment id leaked');
+        });
+
+        test('invalid cohort weights pause cohort rules', () => {
+            const course = cohortCourse();
+            course.components[0] = { ...course.components[0], weight: 60 };
+            course.components[1] = { ...course.components[1], weight: 70 };
+            const report = analyzeCohort({ courses: [course], gradeScale: GRADE_SCALE });
+            assertEqual(report.status, 'warning', 'status');
+            assert(report.findings.some((item) => item.ruleId === 'C-00'), 'C-00 missing');
+        });
+
+        test('cohort without weak points stays positive', () => {
+            const report = analyzeCohort({
+                courses: [cohortCourse({ studentCount: 10, weakCount: 0 })],
+                gradeScale: GRADE_SCALE,
+            });
+            assertEqual(report.status, 'positive', 'status');
+            assert(report.findings.some((item) => item.ruleId === 'C-06'), 'C-06 missing');
+        });
+
+        test('assessment titles are compared after case/whitespace normalization', () => {
+            const course = cohortCourse();
+            course.students.forEach((student, index) => {
+                student.components[0].assessments[0].title = index % 2 ? ' Quiz 1 ' : 'quiz 1';
+            });
+            const report = analyzeCohort({ courses: [course], gradeScale: GRADE_SCALE });
+            const finding = report.findings.find(
+                (item) => item.ruleId === 'C-04' && item.assessment?.toLowerCase() === 'quiz 1',
+            );
+            assert(finding, 'normalized C-04 missing');
+            assertEqual(finding.sampleSize, 10, 'normalized assessment sample size');
+        });
+
+        test('dashboard overview includes per-course findings and links', () => {
+            const overview = analyzeStudentOverview({
+                courses: [dashboardCourse()],
+                gradeScale: GRADE_SCALE,
+            });
+            assertEqual(overview.status, 'warning', 'status');
+            const actionable = overview.findings.find((item) => item.href);
+            assert(actionable, 'course link missing');
+            assert(actionable.href.startsWith('course_scores.html?enrollment_id='), 'unexpected href');
+        });
+
+        test('empty dashboard overview is neutral', () => {
+            const overview = analyzeStudentOverview({ courses: [], gradeScale: GRADE_SCALE });
+            assertEqual(overview.status, 'neutral', 'status');
+            assert(overview.findings.some((item) => item.ruleId === 'S-01'), 'S-01 missing');
+        });
+
+        test('findings are capped and severity-sorted', () => {
+            const report = analyzeStudentCourse({
+                courseCode: 'CS-301',
+                components: sampleComponents(),
+                entries: sampleEntries(),
+                gradeScale: GRADE_SCALE,
+                target: 2.0,
+            });
+            assert(report.findings.length <= 3, 'too many findings');
+            for (let index = 1; index < report.findings.length; index += 1) {
+                assert(
+                    SEVERITY_RANK[report.findings[index - 1].severity] <=
+                        SEVERITY_RANK[report.findings[index].severity],
+                    'findings are not severity-sorted',
+                );
+            }
+        });
+
+        test('draft weight preview reflects unsaved weights', () => {
+            const preview = previewDraftWeights({
+                courses: [cohortCourse()],
+                templateId: 1,
+                gradeScale: GRADE_SCALE,
+                draftComponents: draftComponents(),
+            });
+            assertEqual(preview.status, 'warning', 'status');
+            assert(preview.summary.includes('Draft preview'), 'summary missing draft label');
+            assert(preview.summary.includes('at risk'), 'summary missing risk count');
+        });
+
+        test('invalid draft weights show a neutral prompt', () => {
+            const preview = previewDraftWeights({
+                courses: [cohortCourse()],
+                templateId: 1,
+                gradeScale: GRADE_SCALE,
+                draftComponents: {
+                    midterms: [
+                        { id: '1', name: 'Quizzes', weight: '60', is_exam: '0' },
+                        { id: '2', name: 'Exam', weight: '30', is_exam: '1' },
+                    ],
+                    finals: [
+                        { id: '3', name: 'Quizzes', weight: '50', is_exam: '0' },
+                        { id: '4', name: 'Exam', weight: '50', is_exam: '1' },
+                    ],
+                },
+            });
+            assertEqual(preview.status, 'neutral', 'status');
+            assert(preview.findings.some((item) => item.ruleId === 'D-01'), 'D-01 missing');
+        });
+
+        test('componentResults payload is accepted without a separate entries object', () => {
+            const components = sampleComponents();
+            const componentResults = toComponentResults(components, sampleEntries());
+            const report = analyzeStudentCourse({
+                courseCode: 'CS-301',
+                components: componentResults,
+                gradeScale: GRADE_SCALE,
+            });
+            assertEqual(report.status, 'warning', 'status');
+            assert(report.findings.some((item) => item.ruleId === 'S-04'), 'S-04 missing');
+        });
+
+        const passed = results.filter((item) => item.ok).length;
+        const failed = results.length - passed;
+        const summary = document.getElementById('summary');
+        summary.textContent = `${passed} passed · ${failed} failed`;
+        summary.className = failed === 0 ? 'pass' : 'fail';
+        console.log(`RBA tests: ${passed} passed, ${failed} failed`);
+    </script>
+</body>
+</html>
