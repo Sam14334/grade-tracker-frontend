@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Professor Semester Archive | GradeSeer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/tailwind-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="css/app.css">
+    <script defer src="js/config.js"></script>
+    <script defer src="js/api.js"></script>
+    <script defer src="js/archive/semester-archive.js"></script>
+    <script type="module" src="js/archive/sample-archive.js"></script>
+</head>
+<body data-archive-role="professor" class="bg-[#f8f6f2] text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+    <header class="bg-maroon-900 text-white h-14 sticky top-0 z-40 shadow-md flex items-center justify-between px-5 sm:px-7">
+        <a href="professor_dashboard.html" class="flex min-w-0 items-center space-x-3">
+            <div class="w-8 h-8 rounded-lg shrink-0 bg-white/10 flex items-center justify-center font-bold text-xs border border-white/20">
+                <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+            </div>
+            <span class="font-extrabold text-sm sm:text-base tracking-wide">Grade Tracker</span>
+        </a>
+
+        <div id="archive-account" hidden>
+            <div class="flex items-center gap-3 sm:gap-6 pl-3">
+                <div class="flex items-center gap-2">
+                    <span id="archive-user-initial" class="w-7 h-7 text-[10px] shrink-0 rounded-full bg-white/20 flex items-center justify-center font-bold text-white" aria-hidden="true"></span>
+                    <div class="hidden min-w-0 sm:block">
+                        <span id="archive-user-name" class="block max-w-44 truncate text-xs font-semibold"></span>
+                        <span id="archive-user-role" class="block text-[9px] text-maroon-200"></span>
+                    </div>
+                </div>
+                <button type="button" id="archive-logout" aria-label="Logout" class="text-[11px] font-semibold text-maroon-200 hover:text-white transition flex items-center space-x-1.5 border border-white/20 rounded-lg px-2.5 py-1.5 disabled:opacity-60">
+                    <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 w-full">
+        <aside class="w-56 lg:w-60 bg-[#f4f1eb] border-r border-stone-200 px-3 py-5 shrink-0 hidden md:flex flex-col justify-between">
+            <nav class="space-y-1" aria-label="Professor navigation">
+                <p class="px-3 pb-2 text-[9px] uppercase tracking-wider font-extrabold text-stone-400">Main Menu</p>
+                <a class="w-full px-3 py-2.5 rounded-lg text-[11px] font-medium text-stone-600 hover:bg-stone-200/60 transition flex items-center space-x-3" href="professor_dashboard.html#standing">
+                    <i class="fa-solid fa-chart-column w-4 text-center" aria-hidden="true"></i>
+                    <span>Class Standing</span>
+                </a>
+                <a class="w-full px-3 py-2.5 rounded-lg text-[11px] font-medium text-stone-600 hover:bg-stone-200/60 transition flex items-center space-x-3" href="professor_dashboard.html#templates">
+                    <i class="fa-solid fa-book-open w-4 text-center" aria-hidden="true"></i>
+                    <span>Course Templates</span>
+                </a>
+                <a class="w-full px-3 py-2.5 rounded-lg text-[11px] font-bold bg-[#eee8dc] text-maroon-900 border border-[#e5ddcf] flex items-center space-x-3" href="professor_semester_archive.html" aria-current="page">
+                    <i class="fa-solid fa-box-archive w-4 text-center" aria-hidden="true"></i>
+                    <span>Semester Archive</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-7 space-y-5">
+            <nav class="flex flex-wrap gap-2 md:hidden no-print" aria-label="Professor navigation">
+                <a href="professor_dashboard.html#standing" class="flex-1 rounded-xl bg-stone-200 text-stone-700 px-3 py-2 text-center text-xs font-bold">Class Standing</a>
+                <a href="professor_dashboard.html#templates" class="flex-1 rounded-xl bg-stone-200 text-stone-700 px-3 py-2 text-center text-xs font-bold">Course Templates</a>
+                <a href="professor_semester_archive.html" aria-current="page" class="flex-1 rounded-xl bg-maroon-900 text-white px-3 py-2 text-center text-xs font-bold">Semester Archive</a>
+            </nav>
+
+            <p id="archive-session-status" class="empty:hidden text-xs text-stone-600" role="status"></p>
+            <noscript>Enable JavaScript to access your semester archive.</noscript>
+
+            <div id="archive-content" class="space-y-4" hidden>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Semester Archive</h1>
+                        <p class="mt-0.5 text-xs text-stone-500">Browse past teaching semesters, archived sections, and final class results.</p>
+                    </div>
+                    <button type="button" disabled class="rounded-lg bg-maroon-900 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+                        <i class="fa-solid fa-box-archive mr-1" aria-hidden="true"></i>Archive Active Term
+                    </button>
+                </div>
+
+                <p class="text-xs font-semibold text-stone-600">Sample records for preview</p>
+
+                <dl id="archive-summary" class="grid grid-cols-1 divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm sm:grid-cols-3 sm:divide-x sm:divide-y-0" aria-label="Archive summary">
+                    <div class="px-4 py-3">
+                        <dt class="text-[11px] font-bold uppercase tracking-wide text-stone-500">Archived Semesters</dt>
+                        <dd class="mt-1 text-base font-black text-slate-900">—</dd>
+                    </div>
+                    <div class="px-4 py-3">
+                        <dt class="text-[11px] font-bold uppercase tracking-wide text-stone-500">Archived Sections</dt>
+                        <dd class="mt-1 text-base font-black text-slate-900">—</dd>
+                    </div>
+                    <div class="px-4 py-3">
+                        <dt class="text-[11px] font-bold uppercase tracking-wide text-stone-500">Historical Pass Rate</dt>
+                        <dd class="mt-1 text-base font-black text-slate-900">—</dd>
+                    </div>
+                </dl>
+
+                <section id="archive-records" class="space-y-3" aria-label="Sample semester records"></section>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
