@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "npm run build:css",
+    "build:css": "tailwindcss -i ./css/tailwind.css -o ./css/tailwind-app.css --config ./tailwind-app.config.cjs --minify && tailwindcss -i ./css/tailwind.css -o ./css/tailwind-public.css --config ./tailwind-public.config.cjs --minify",
+    "watch:css": "concurrently \"tailwindcss -i ./css/tailwind.css -o ./css/tailwind-app.css --config ./tailwind-app.config.cjs --watch\" \"tailwindcss -i ./css/tailwind.css -o ./css/tailwind-public.css --config ./tailwind-public.config.cjs --watch\""
+  },
+  "devDependencies": {
+    "concurrently": "9.2.5",
+    "tailwindcss": "3.4.17"
+  }
+}
