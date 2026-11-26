@@ -85,6 +85,7 @@ function initStudentDashboard(data) {
         title: course.title,
         grade: course.grade ?? null,
         percentage: course.percentage ?? null,
+        gradedWeight: course.gradedWeight ?? 0,
         gradeStatus: course.gradeStatus ?? 'Incomplete',
         target: course.target,
         units: course.units
@@ -384,6 +385,17 @@ function renderGradesTable() {
     studentGradesData.forEach(item => {
         const tr = document.createElement('tr');
         const courseUrl = `course_scores.html?enrollment_id=${item.enrollmentId}`;
+        let percentageText = '';
+        if (item.percentage !== null) {
+            percentageText = `${item.percentage.toFixed(2)}%`;
+            if (item.gradeStatus === 'In Progress') {
+                percentageText += ' earned so far';
+                if (item.gradedWeight > 0) {
+                    const enteredWorkPercentage = item.percentage / item.gradedWeight * 100;
+                    percentageText = `${enteredWorkPercentage.toFixed(2)}% on entered work · ${item.gradedWeight}% of course weight covered`;
+                }
+            }
+        }
         if (item.enrollmentId > 0) {
             tr.className = 'hover:bg-maroon-50/50 cursor-pointer transition';
             tr.addEventListener('click', event => {
@@ -399,7 +411,7 @@ function renderGradesTable() {
             <td class="p-3">
                 ${item.enrollmentId > 0 ? `
                 <span class="font-bold text-maroon-900">${item.grade === null ? escapeGradeText(item.gradeStatus) : item.grade.toFixed(2)}</span>
-                ${item.percentage === null ? '' : `<span class="block text-[10px] text-stone-500 mt-1">${item.percentage.toFixed(2)}%</span>`}
+                ${percentageText ? `<span class="block text-[10px] text-stone-500 mt-1">${percentageText}</span>` : ''}
                 ` : `<input type="number" step="0.25" min="1.00" max="5.00" value="${item.grade === null ? '' : item.grade.toFixed(2)}" placeholder="Enter grade"
                        class="grade-input w-28 px-3 py-1.5 rounded-lg border border-stone-300 font-bold text-xs focus:border-maroon-800 outline-none"
                        data-id="${item.id}" data-units="${item.units}">`}
